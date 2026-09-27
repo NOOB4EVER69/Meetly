@@ -29,7 +29,9 @@
       publicKey: "k4XusmTspTc444r3",
       serviceId: "service_n0wxm37",       // e.g. "service_abc123" — from EmailJS dashboard > Email Services
       templateIds: {
-        newRequest: "template_lo4tn8e" // e.g. "template_xyz789" — created below
+        newRequest: "template_4c42das", // e.g. "template_xyz789" — created below
+        declined: "YOUR_TEMPLATE_ID_DECLINED",      // create a second EmailJS template for decline notifications
+        accepted: "template_d2e425o"       // create a third EmailJS template for acceptance notifications
       }
     }
   };
@@ -509,6 +511,56 @@ async function sendNewRequestEmail({ ownerEmail, ownerName, requesterName, reque
   }
 }
 
+async function sendDeclinedEmail({ requesterEmail, requesterName, ownerName, date, startTime, endTime, duration, reason, ownerResponse }) {
+  const { serviceId, templateIds } = CONFIG.emailjs;
+  if (!serviceId || serviceId.startsWith("YOUR_") || !templateIds.declined || templateIds.declined.startsWith("YOUR_")) {
+    console.warn("EmailJS decline template not configured yet — skipping email send.");
+    return { ok: false, skipped: true };
+  }
+  try {
+    await window.emailjs.send(serviceId, templateIds.declined, {
+      to_email: requesterEmail,
+      requester_name: requesterName,
+      owner_name: ownerName,
+      date: formatDateLabel(date),
+      start_time: formatTimeLabel(startTime),
+      end_time: formatTimeLabel(endTime),
+      duration: `${duration} minutes`,
+      reason: reason || "—",
+      owner_response: ownerResponse || "—"
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("EmailJS decline send failed:", err);
+    return { ok: false, error: err };
+  }
+}
+
+async function sendAcceptedEmail({ requesterEmail, requesterName, ownerName, date, startTime, endTime, duration, reason, note }) {
+  const { serviceId, templateIds } = CONFIG.emailjs;
+  if (!serviceId || serviceId.startsWith("YOUR_") || !templateIds.accepted || templateIds.accepted.startsWith("YOUR_")) {
+    console.warn("EmailJS accepted template not configured yet — skipping email send.");
+    return { ok: false, skipped: true };
+  }
+  try {
+    await window.emailjs.send(serviceId, templateIds.accepted, {
+      to_email: requesterEmail,
+      requester_name: requesterName,
+      owner_name: ownerName,
+      date: formatDateLabel(date),
+      start_time: formatTimeLabel(startTime),
+      end_time: formatTimeLabel(endTime),
+      duration: `${duration} minutes`,
+      reason: reason || "—",
+      note: note || "—"
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("EmailJS accepted send failed:", err);
+    return { ok: false, error: err };
+  }
+}
+
 // ============================================================
 // FIRESTORE HELPERS
 // ============================================================
@@ -662,6 +714,11 @@ async function route() {
     if (!currentProfile) return renderOnboarding();
     return renderRequests();
   }
+  if (path === "/my-requests") {
+    if (!currentUser) return navigate("/login");
+    if (!currentProfile) return renderOnboarding();
+    return renderMyRequests();
+  }
   if (path === "/availability") {
     if (!currentUser) return navigate("/login");
     if (!currentProfile) return renderOnboarding();
@@ -688,6 +745,7 @@ function appShell(activePage, innerHtml) {
   const links = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard" },
     { key: "requests", href: "/requests", label: "Requests" },
+    { key: "my-requests", href: "/my-requests", label: "My Requests" },
     { key: "availability", href: "/availability", label: "Availability" },
     { key: "profile", href: "/profile", label: "Profile" },
   ];
@@ -1063,13 +1121,84 @@ async function acceptRequest(btn, req) {
       relatedRequestId: req.id,
       createdAt: serverTimestamp()
     });
-    toast("Meeting confirmed.", "success");
+
+    const emailResult = await sendAcceptedEmail({
+      requesterEmail: req.requesterEmail,
+      requesterName: req.requesterName,
+      ownerName: currentProfile.displayName,
+      date: req.date,
+      startTime: req.startTime,
+      endTime: req.endTime,
+      duration: req.duration,
+      reason: req.reason,
+      note: req.note
+    });
+
+    if (!emailResult.ok && !emailResult.skipped) {
+      toast("Meeting confirmed, but the email notification could not be sent.", "warning");
+    } else {
+      toast("Meeting confirmed.", "success");
+    }
     renderRequests();
   } catch (err) {
     console.error(err);
     toast("Couldn't accept this request.", "error");
     btn.disabled = false;
     btn.textContent = "Accept";
+  }
+}
+
+// ============================================================
+// MY REQUESTS PAGE — requests this user has sent to others
+// ============================================================
+let myRequestsTab = "all";
+async function renderMyRequests() {
+  appShell("my-requests", `
+    <div class="page-header">
+      <h1>My Requests</h1>
+      <p>Meetings you've requested with other people.</p>
+    </div>
+    <div class="tabs" id="my-req-tabs">
+      ${["all","pending","accepted","declined"].map(t => `<div class="tab ${t===myRequestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
+    </div>
+    <div class="panel" id="my-req-list"><div class="empty-state">Loading…</div></div>
+  `);
+
+  document.querySelectorAll("#my-req-tabs .tab").forEach(t => t.addEventListener("click", () => {
+    myRequestsTab = t.dataset.tab;
+    renderMyRequests();
+  }));
+
+  try {
+    let q;
+    if (myRequestsTab === "all") {
+      q = query(collection(db, "bookingRequests"), where("requesterId", "==", currentUser.uid));
+    } else {
+      q = query(collection(db, "bookingRequests"), where("requesterId", "==", currentUser.uid), where("status", "==", myRequestsTab));
+    }
+    const snap = await getDocs(q);
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+
+    const listEl = document.getElementById("my-req-list");
+    if (items.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><strong>No ${myRequestsTab === 'all' ? '' : myRequestsTab} requests</strong>Meetings you request will appear here.</div>`;
+      return;
+    }
+    listEl.innerHTML = items.map(r => `
+      <div class="request-card">
+        <div class="request-top">
+          <span class="r-name">@${esc(r.ownerUsername || "")}</span>
+          <span class="status-pill ${r.status}">${esc(r.status)}</span>
+        </div>
+        <div class="request-meta">${esc(formatDateLabel(r.date))} · ${esc(formatTimeLabel(r.startTime))}–${esc(formatTimeLabel(r.endTime))} · ${esc(r.duration)} min · ${esc(r.reason || "—")}</div>
+        ${r.note ? `<div class="request-note">${esc(r.note)}</div>` : ""}
+        ${r.status === "declined" && r.ownerResponse ? `<div class="request-note" style="border-left:2px solid var(--danger);">Reason: ${esc(r.ownerResponse)}</div>` : ""}
+        ${r.status === "accepted" ? `<div class="request-note" style="border-left:2px solid var(--success);">Your meeting is confirmed.</div>` : ""}
+      </div>
+    `).join("");
+  } catch (err) {
+    console.error(err);
+    document.getElementById("my-req-list").innerHTML = `<div class="empty-state">Couldn't load your requests.</div>`;
   }
 }
 
@@ -1107,8 +1236,24 @@ function openDeclineModal(req) {
         relatedRequestId: req.id,
         createdAt: serverTimestamp()
       });
+      const emailResult = await sendDeclinedEmail({
+        requesterEmail: req.requesterEmail,
+        requesterName: req.requesterName,
+        ownerName: currentProfile.displayName,
+        date: req.date,
+        startTime: req.startTime,
+        endTime: req.endTime,
+        duration: req.duration,
+        reason: req.reason,
+        ownerResponse: reasonText
+      });
+
       overlay.remove();
-      toast("Request declined.", "info");
+      if (!emailResult.ok && !emailResult.skipped) {
+        toast("Request declined, but the email notification could not be sent.", "warning");
+      } else {
+        toast("Request declined.", "info");
+      }
       renderRequests();
     } catch (err) {
       console.error(err);
