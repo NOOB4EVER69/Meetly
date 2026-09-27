@@ -2,8 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Meetly — Your time. Your link. Your choice.</title>
+<meta name="description" content="Meetly is the simplest way to share your availability and let people book time with you. Set your hours once, share your link, and skip the back-and-forth." />
+<meta name="theme-color" content="#050b14" />
+<meta property="og:title" content="Meetly — Your time. Your link. Your choice." />
+<meta property="og:description" content="Share your availability once. Let people request a time that actually works — no back-and-forth, no guesswork." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,24 +78,31 @@
 
 <style>
   :root {
-    --bg: #0e1013;
-    --panel: #16191d;
-    --panel-2: #1c2025;
-    --border: #262b31;
-    --text: #eceef0;
-    --text-dim: #9aa1ab;
-    --text-faint: #5f6670;
-    --accent: #5b8def;
-    --accent-dim: #3a5a9c;
-    --accent-text: #0e1013;
-    --danger: #e2645c;
-    --success: #4caf82;
-    --radius: 8px;
+    --bg: #050b14;
+    --panel: #0a1526;
+    --panel-2: #0f1f36;
+    --border: #1c3352;
+    --border-soft: #142640;
+    --text: #eaf1fb;
+    --text-dim: #8fa6c4;
+    --text-faint: #57708f;
+    --accent: #2fb3c7;
+    --accent-hover: #4cc6d9;
+    --accent-dim: #164450;
+    --accent-text: #04141a;
+    --danger: #e2665c;
+    --success: #3ec48a;
+    --radius-sm: 5px;
+    --radius: 10px;
+    --radius-lg: 16px;
     --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-display: 'Source Serif 4', Georgia, serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  html { scroll-padding-top: var(--safe-top); }
   body {
     margin: 0;
     background: var(--bg);
@@ -98,10 +111,13 @@
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
   }
   a { color: inherit; text-decoration: none; }
   button { font-family: inherit; cursor: pointer; }
   input, select, textarea { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   #app { min-height: 100%; }
 
   .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
@@ -113,8 +129,8 @@
     font-size: 14px; font-weight: 600; transition: background .15s, border-color .15s;
     white-space: nowrap;
   }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #4a7ede; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); font-weight: 700; }
+  .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:disabled { background: var(--accent-dim); cursor: not-allowed; }
   .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
   .btn-ghost:hover { border-color: var(--text-faint); }
@@ -142,24 +158,54 @@
   .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
   .section { padding: 64px 0; border-bottom: 1px solid var(--border); }
-  .section-label { font-size: 13px; color: var(--text-faint); margin-bottom: 8px; }
-  .section h2 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 40px; }
+  .section h2 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 40px; max-width: 22ch; }
 
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-  .step { border-left: 2px solid var(--border); padding-left: 20px; }
+  .step { position: relative; padding-left: 28px; }
+  .step-num {
+    position: absolute; left: 0; top: 1px; font-family: var(--font-display); font-size: 15px;
+    color: var(--accent); font-weight: 600;
+  }
   .step h3 { font-size: 16px; margin: 0 0 8px; }
   .step p { color: var(--text-dim); font-size: 14px; margin: 0; }
 
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .feature { padding: 24px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
-  .feature h3 { font-size: 15px; margin: 0 0 8px; }
-  .feature p { color: var(--text-dim); font-size: 14px; margin: 0; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--border); }
+  .feature { padding: 22px 20px 22px 0; border-right: 1px solid var(--border); }
+  .feature:last-child { border-right: none; }
+  .feature h3 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
+  .feature p { color: var(--text-dim); font-size: 14px; margin: 0; line-height: 1.55; }
 
-  .footer { padding: 32px 0; color: var(--text-faint); font-size: 13px; display: flex; justify-content: space-between; }
+  .footer { padding: 32px 0; color: var(--text-faint); font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 16px; }
+  .footer-links a { color: var(--text-faint); }
+  .footer-links a:hover { color: var(--accent); }
+
+  /* ---------- Legal / FAQ pages ---------- */
+  .doc-page { max-width: 640px; margin: 0 auto; padding: 40px 20px 80px; }
+  .doc-page .doc-back { font-size: 13px; color: var(--text-faint); margin-bottom: 20px; display: inline-block; }
+  .doc-page .doc-back:hover { color: var(--accent); }
+  .doc-page h1 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 8px; }
+  .doc-page .doc-updated { color: var(--text-faint); font-size: 12.5px; margin: 0 0 32px; }
+  .doc-page h2 { font-size: 16px; margin: 28px 0 10px; }
+  .doc-page p, .doc-page li { color: var(--text-dim); font-size: 14px; line-height: 1.7; margin: 0 0 10px; }
+  .doc-page ul { padding-left: 20px; margin: 0 0 14px; }
+  .faq-item { border-bottom: 1px solid var(--border); padding: 4px 0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item summary { padding: 14px 4px; font-size: 14.5px; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after { content: "+"; color: var(--accent); font-size: 18px; flex-shrink: 0; transition: transform .15s; }
+  .faq-item[open] summary::after { transform: rotate(45deg); }
+  .faq-item .faq-answer { color: var(--text-dim); font-size: 13.5px; line-height: 1.65; padding: 0 4px 16px; }
 
   @media (max-width: 720px) {
     .steps, .features { grid-template-columns: 1fr; }
-    .hero { padding: 56px 0 48px; }
+    .hero { padding: 44px 0 40px; }
+    .hero p { font-size: 16px; }
+    .section { padding: 44px 0; }
+    .section h2 { font-size: 22px; margin-bottom: 28px; }
+    .feature { border-right: none; border-bottom: 1px solid var(--border); padding: 18px 0; }
+    .feature:last-child { border-bottom: none; }
+    .container { padding: 0 18px; }
   }
 
   /* ---------- Login ---------- */
@@ -240,26 +286,39 @@
   .page-header h1 { font-family: var(--font-display); font-weight: 500; font-size: 24px; margin: 0 0 4px; }
   .page-header p { color: var(--text-dim); font-size: 14px; margin: 0; }
 
-  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
-  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .cards-row { display: grid; grid-template-columns: repeat(3, 1fr) 1.4fr; gap: 12px; margin-bottom: 32px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
   .stat-card .label { font-size: 12px; color: var(--text-faint); margin-bottom: 6px; }
-  .stat-card .value { font-size: 22px; font-weight: 700; }
-  .stat-card.link-card .value { font-size: 13px; font-weight: 500; word-break: break-all; color: var(--accent); }
+  .stat-card .value { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+  .stat-card.link-card { background: var(--panel-2); border-color: var(--accent-dim); }
+  .stat-card.link-card .value { font-family: var(--font-ui); font-size: 13px; font-weight: 500; word-break: break-all; color: var(--accent); }
 
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
   .panel h2 { font-size: 15px; margin: 0 0 16px; }
   .empty-state { text-align: center; padding: 32px 16px; color: var(--text-faint); font-size: 14px; }
   .empty-state strong { display: block; color: var(--text-dim); font-size: 14px; margin-bottom: 4px; }
 
-  .meeting-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid var(--border);
+  /* ---------- Agenda (Google Calendar-style upcoming list) ---------- */
+  .agenda { display: flex; flex-direction: column; }
+  .agenda-group { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border-soft); }
+  .agenda-group:last-child { border-bottom: none; }
+  .agenda-date { width: 44px; flex-shrink: 0; text-align: center; padding-top: 2px; }
+  .agenda-date .ad-dow { font-size: 10.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+  .agenda-date .ad-num { font-size: 19px; font-weight: 700; font-family: var(--font-display); color: var(--text); width: 32px; height: 32px; line-height: 32px; border-radius: 50%; margin: 0 auto; }
+  .agenda-date.is-today .ad-num { background: var(--accent); color: var(--accent-text); }
+  .agenda-events { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .agenda-event {
+    display: flex; gap: 12px; align-items: flex-start; background: var(--panel-2);
+    border-radius: 8px; padding: 10px 12px; border-left: 3px solid var(--evc, var(--accent));
   }
-  .meeting-row:last-child { border-bottom: none; }
-  .meeting-row .m-when { font-size: 13px; color: var(--text-faint); width: 130px; flex-shrink: 0; }
-  .meeting-row .m-info { flex: 1; }
-  .meeting-row .m-info .m-who { font-size: 14px; font-weight: 600; }
-  .meeting-row .m-info .m-reason { font-size: 13px; color: var(--text-dim); }
+  .agenda-event .ae-time { font-size: 12px; color: var(--text-faint); width: 86px; flex-shrink: 0; padding-top: 2px; white-space: nowrap; }
+  .agenda-event .ae-body { min-width: 0; flex: 1; }
+  .agenda-event .ae-title { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agenda-event .ae-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .agenda-event { flex-direction: column; gap: 3px; }
+    .agenda-event .ae-time { width: auto; }
+  }
 
   .request-card { padding: 16px 0; border-bottom: 1px solid var(--border); }
   .request-card:last-child { border-bottom: none; }
@@ -280,15 +339,24 @@
   .tab.active { color: var(--text); border-color: var(--accent); }
 
   .day-row {
-    display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border);
   }
   .day-row:last-child { border-bottom: none; }
-  .day-row .day-name { width: 100px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-  .day-row .day-ranges { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-  .range-line { display: flex; align-items: center; gap: 8px; }
+  .day-row-head { display: flex; align-items: center; gap: 10px; width: 108px; flex-shrink: 0; padding-top: 5px; }
+  .day-row .day-name { font-size: 14px; font-weight: 600; }
+  .day-row .day-ranges { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .day-row .day-ranges.is-off { color: var(--text-faint); font-size: 13px; padding-top: 6px; }
+  .range-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .range-line input[type=time] {
     background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 8px; border-radius: 6px; font-size: 13px;
+    padding: 8px 10px; border-radius: 6px; font-size: 13px; flex: 1 1 108px; min-width: 96px; max-width: 150px;
+  }
+  .range-line .icon-btn { margin-left: auto; }
+  @media (max-width: 640px) {
+    .day-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 0; }
+    .day-row-head { width: auto; justify-content: space-between; padding-top: 0; }
+    .range-line input[type=time] { flex: 1 1 40%; max-width: none; }
+    .range-line .icon-btn { margin-left: 0; }
   }
   .toggle {
     position: relative; width: 36px; height: 20px; flex-shrink: 0;
@@ -330,7 +398,7 @@
   .cal-day.selectable { color: var(--text); cursor: pointer; }
   .cal-day.selectable:hover { border-color: var(--accent); }
   .cal-day.disabled { color: var(--text-faint); opacity: .35; cursor: default; }
-  .cal-day.selected { background: var(--accent); color: #fff; font-weight: 600; }
+  .cal-day.selected { background: var(--accent); color: var(--accent-text); font-weight: 700; }
   .cal-day.empty { background: transparent; }
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .cal-nav button { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 28px; height: 28px; }
@@ -342,21 +410,21 @@
     color: var(--text); font-size: 13px; text-align: center;
   }
   .slot-btn:hover { border-color: var(--accent); }
-  .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 
   .duration-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .duration-btn {
     padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
     color: var(--text); font-size: 13px;
   }
-  .duration-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .duration-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 
   .reason-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .reason-chip {
     padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
     color: var(--text); font-size: 13px;
   }
-  .reason-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .reason-chip.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 
   .booking-summary { background: var(--panel-2); border-radius: 8px; padding: 14px; margin-top: 16px; font-size: 13px; color: var(--text-dim); }
   .booking-summary strong { color: var(--text); }
@@ -403,21 +471,93 @@
   .skel { background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel) 50%, var(--panel-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
   @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
+  /* ---------- Notification bell ---------- */
+  .bell-btn {
+    position: relative; background: none; border: 1px solid transparent; color: var(--text-dim);
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; transition: background .15s, transform .1s;
+  }
+  .bell-btn:hover { background: var(--panel-2); color: var(--text); }
+  .bell-btn:active { transform: scale(.92); }
+  .bell-btn.ringing { animation: bell-ring .5s ease; }
+  @keyframes bell-ring {
+    0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(11deg); }
+    60% { transform: rotate(-7deg); } 80% { transform: rotate(4deg); }
+  }
+  .bell-dot {
+    position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 20px;
+    background: var(--danger); border: 2px solid var(--bg); color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; line-height: 1;
+    box-shadow: 0 0 0 rgba(226,102,92,.5); animation: dot-pulse 1.8s infinite;
+  }
+  @keyframes dot-pulse { 0% { box-shadow: 0 0 0 0 rgba(226,102,92,.45); } 70% { box-shadow: 0 0 0 6px rgba(226,102,92,0); } 100% { box-shadow: 0 0 0 0 rgba(226,102,92,0); } }
+  .bell-panel {
+    position: absolute; top: calc(100% + 10px); right: 0; width: 340px; max-width: calc(100vw - 24px);
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: 0 16px 40px rgba(0,0,0,.5); z-index: 150; overflow: hidden;
+    transform-origin: top right; animation: panel-in .16s ease-out;
+  }
+  @keyframes panel-in { from { opacity: 0; transform: scale(.96) translateY(-6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .bell-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .bell-panel-header h3 { font-size: 14px; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .bell-panel-header .bell-count { background: var(--panel-2); color: var(--text-dim); font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .bell-panel-header button { background: none; border: none; color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 6px; border-radius: 6px; }
+  .bell-panel-header button:hover { background: var(--panel-2); }
+  .bell-list { max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .bell-item { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--border-soft); position: relative; transition: background .12s; cursor: pointer; }
+  .bell-item:last-child { border-bottom: none; }
+  .bell-item:hover { background: var(--panel-2); }
+  .bell-item.unread { background: rgba(47,179,199,.07); }
+  .bell-item.unread::before { content: ""; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .bell-item.unread { padding-left: 22px; }
+  .bell-item .b-icon {
+    font-size: 15px; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--panel-2); display: flex; align-items: center; justify-content: center;
+  }
+  .bell-item.type-accepted .b-icon { background: rgba(62,196,138,.15); }
+  .bell-item.type-declined .b-icon { background: rgba(226,102,92,.15); }
+  .bell-item.type-new_request .b-icon { background: rgba(47,179,199,.15); }
+  .bell-item .b-title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
+  .bell-item .b-msg { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
+  .bell-item .b-time { font-size: 11px; color: var(--text-faint); margin-top: 5px; }
+  .bell-empty { padding: 40px 16px; text-align: center; color: var(--text-faint); font-size: 13px; }
+  .bell-empty .be-icon { font-size: 26px; display: block; margin-bottom: 8px; opacity: .6; }
+  .bell-overlay-catch { position: fixed; inset: 0; z-index: 140; }
+  @media (max-width: 480px) {
+    .bell-panel { position: fixed; top: calc(var(--safe-top) + 8px); right: 8px; left: 8px; width: auto; max-width: none; }
+  }
+
   @media (max-width: 860px) {
     .sidebar { display: none; }
-    .topbar { display: flex; }
-    .main-content { padding: 20px; }
+    .topbar { display: flex; position: sticky; top: 0; z-index: 60; background: var(--bg); }
+    .main-content { padding: 18px 16px 96px; }
     .cards-row { grid-template-columns: repeat(2, 1fr); }
-    .app-shell.mobile-drawer-open .sidebar {
-      display: flex; position: fixed; inset: 0 auto 0 0; z-index: 90; background: var(--bg); width: 240px;
+    .cards-row .link-card { grid-column: 1 / -1; }
+
+    .bottom-nav {
+      display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: 6px 4px calc(6px + var(--safe-bottom));
+      justify-content: space-around;
     }
+    .bottom-nav .bn-link {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 4px; flex: 1; color: var(--text-faint); font-size: 10.5px; font-weight: 600;
+      border-radius: var(--radius-sm);
+    }
+    .bottom-nav .bn-link .bn-icon { font-size: 19px; line-height: 1; }
+    .bottom-nav .bn-link.active { color: var(--accent); }
+  }
+  @media (min-width: 861px) {
+    .bottom-nav { display: none; }
   }
 </style>
 </head>
 <body>
 
-<div id="app"><div class="loading-screen">Loading…</div></div>
+<div id="app"><div class="loading-screen"><span class="spinner" style="width:22px;height:22px;border-width:3px;"></span></div></div>
 <div id="toast-stack"></div>
+
 
 <script type="module">
 window.addEventListener("meetly:ready", initMeetly, { once: true });
@@ -435,6 +575,14 @@ const appEl = document.getElementById("app");
 // ============================================================
 // UTIL: escaping, toasts, routing
 // ============================================================
+function skeletonRows(n, height) {
+  return Array.from({length: n}).map(() => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border-soft);">
+      <div class="skel" style="width:40%;height:13px;margin-bottom:8px;"></div>
+      <div class="skel" style="width:80%;height:${height || 12}px;"></div>
+    </div>
+  `).join("");
+}
 function esc(str) {
   const d = document.createElement("div");
   d.textContent = str == null ? "" : String(str);
@@ -695,7 +843,7 @@ function humanizeAuthError(err) {
 // ROUTER
 // ============================================================
 async function route() {
-  if (!authReady) { appEl.innerHTML = `<div class="loading-screen">Loading…</div>`; return; }
+  if (!authReady) { appEl.innerHTML = `<div class="loading-screen"><span class="spinner" style="width:22px;height:22px;border-width:3px;"></span></div>`; return; }
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
   if (path === "/") {
@@ -729,6 +877,9 @@ async function route() {
     if (!currentProfile) return renderOnboarding();
     return renderProfilePage();
   }
+  if (path === "/privacy") return renderLegalPage("privacy");
+  if (path === "/terms") return renderLegalPage("terms");
+  if (path === "/faq") return renderFaqPage();
 
   // Fallback: treat as /username public profile
   const username = path.slice(1);
@@ -741,6 +892,15 @@ async function route() {
 // ============================================================
 // SHELL: layout wrapper for logged-in app pages
 // ============================================================
+// icon glyphs per nav key — plain text/emoji, no icon library needed
+const NAV_ICONS = {
+  dashboard: "◆",
+  requests: "◧",
+  "my-requests": "◨",
+  availability: "◷",
+  profile: "◍"
+};
+
 function appShell(activePage, innerHtml) {
   const links = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard" },
@@ -764,13 +924,28 @@ function appShell(activePage, innerHtml) {
           </div>
           <button id="signout-btn">Sign out</button>
         </div>
+        <div class="footer-links" style="padding:10px 10px 0;font-size:11px;">
+          <a data-nav="/faq">FAQ</a><a data-nav="/privacy">Privacy</a><a data-nav="/terms">Terms</a>
+        </div>
       </div>
       <div class="main">
         <div class="topbar">
           <div class="logo">Meetly</div>
-          <button class="icon-btn" id="mobile-menu-btn" style="font-size:20px;color:var(--text);">☰</button>
+          <div style="position:relative;">
+            <button class="bell-btn" id="bell-btn" aria-label="Notifications">
+              🔔<span class="bell-dot" id="bell-dot" style="display:none;"></span>
+            </button>
+          </div>
         </div>
         <div class="main-content">${innerHtml}</div>
+      </div>
+      <div class="bottom-nav">
+        ${links.map(l => `
+          <a class="bn-link ${l.key===activePage?'active':''}" data-nav="${l.href}">
+            <span class="bn-icon">${NAV_ICONS[l.key] || "•"}</span>
+            <span>${l.label.split(" ")[0]}</span>
+          </a>
+        `).join("")}
       </div>
     </div>
   `;
@@ -781,10 +956,121 @@ function appShell(activePage, innerHtml) {
     await signOut(auth);
     navigate("/");
   });
-  const menuBtn = document.getElementById("mobile-menu-btn");
-  if (menuBtn) menuBtn.addEventListener("click", () => {
-    document.getElementById("app-shell").classList.toggle("mobile-drawer-open");
+  setupNotificationBell();
+}
+
+// ============================================================
+// NOTIFICATION BELL
+// ============================================================
+async function setupNotificationBell() {
+  const bellBtn = document.getElementById("bell-btn");
+  const bellDot = document.getElementById("bell-dot");
+  if (!bellBtn) return;
+
+  let notifs = [];
+  try {
+    const snap = await getDocs(query(collection(db, "notifications"), where("userId", "==", currentUser.uid)));
+    notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+        return bt - at;
+      })
+      .slice(0, 20);
+  } catch (err) {
+    console.error("Couldn't load notifications:", err);
+  }
+
+  const unreadCount = notifs.filter(n => !n.read).length;
+  if (unreadCount > 0) {
+    bellDot.style.display = "flex";
+    bellDot.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
+    bellBtn.classList.add("ringing");
+    setTimeout(() => bellBtn.classList.remove("ringing"), 500);
+  } else {
+    bellDot.style.display = "none";
+  }
+
+  bellBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (document.getElementById("bell-panel")) { closeBellPanel(); return; }
+    openBellPanel(notifs);
   });
+}
+
+const NOTIF_ICONS = {
+  new_request: "📩",
+  accepted: "✅",
+  declined: "✕",
+  suggestion: "🕓"
+};
+
+function openBellPanel(notifs) {
+  const wrap = document.getElementById("bell-btn").parentElement;
+  const unreadCount = notifs.filter(n => !n.read).length;
+  const panel = document.createElement("div");
+  panel.className = "bell-panel";
+  panel.id = "bell-panel";
+  panel.innerHTML = `
+    <div class="bell-panel-header">
+      <h3>Notifications ${unreadCount > 0 ? `<span class="bell-count">${unreadCount} new</span>` : ""}</h3>
+      ${notifs.some(n=>!n.read) ? `<button id="mark-all-read">Mark all read</button>` : ""}
+    </div>
+    <div class="bell-list">
+      ${notifs.length === 0
+        ? `<div class="bell-empty"><span class="be-icon">🔔</span>You're all caught up.</div>`
+        : notifs.map(n => `
+          <div class="bell-item type-${esc(n.type || '')} ${n.read ? '' : 'unread'}" data-id="${n.id}">
+            <div class="b-icon">${NOTIF_ICONS[n.type] || "•"}</div>
+            <div style="flex:1;min-width:0;">
+              <div class="b-title">${esc(n.title || "")}</div>
+              <div class="b-msg">${esc(n.message || "")}</div>
+              <div class="b-time">${n.createdAt && n.createdAt.toDate ? n.createdAt.toDate().toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : "Just now"}</div>
+            </div>
+          </div>
+        `).join("")
+      }
+    </div>
+  `;
+  wrap.appendChild(panel);
+
+  const catchOverlay = document.createElement("div");
+  catchOverlay.className = "bell-overlay-catch";
+  catchOverlay.id = "bell-overlay-catch";
+  catchOverlay.addEventListener("click", closeBellPanel);
+  document.body.insertBefore(catchOverlay, document.body.firstChild);
+
+  const markAllBtn = document.getElementById("mark-all-read");
+  if (markAllBtn) markAllBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    try {
+      await Promise.all(notifs.filter(n => !n.read).map(n => updateDoc(doc(db, "notifications", n.id), { read: true })));
+      document.getElementById("bell-dot").style.display = "none";
+      closeBellPanel();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  panel.querySelectorAll(".bell-item").forEach(item => {
+    item.addEventListener("click", async () => {
+      const n = notifs.find(x => x.id === item.dataset.id);
+      if (n && !n.read) {
+        item.classList.remove("unread");
+        try { await updateDoc(doc(db, "notifications", n.id), { read: true }); } catch (err) { console.error(err); }
+        if (!notifs.some(x => x.id !== n.id && !x.read)) {
+          document.getElementById("bell-dot").style.display = "none";
+        }
+      }
+    });
+  });
+}
+
+function closeBellPanel() {
+  const panel = document.getElementById("bell-panel");
+  if (panel) panel.remove();
+  const overlay = document.getElementById("bell-overlay-catch");
+  if (overlay) overlay.remove();
 }
 
 // ============================================================
@@ -806,16 +1092,14 @@ function renderLanding() {
         </div>
       </div>
       <div class="section" id="how-it-works">
-        <div class="section-label">How it works</div>
         <h2>Three steps, no calendar tennis</h2>
         <div class="steps">
-          <div class="step"><h3>Create your profile</h3><p>Sign in and choose a username. That's your Meetly link.</p></div>
-          <div class="step"><h3>Share your link</h3><p>Send it in a message, an email signature, or your bio.</p></div>
-          <div class="step"><h3>Accept what works</h3><p>Review requests and confirm the times that fit your day.</p></div>
+          <div class="step"><span class="step-num">1</span><h3>Create your profile</h3><p>Sign in and choose a username. That's your Meetly link.</p></div>
+          <div class="step"><span class="step-num">2</span><h3>Share your link</h3><p>Send it in a message, an email signature, or your bio.</p></div>
+          <div class="step"><span class="step-num">3</span><h3>Accept what works</h3><p>Review requests and confirm the times that fit your day.</p></div>
         </div>
       </div>
       <div class="section" style="border-bottom:none;">
-        <div class="section-label">Why it works</div>
         <h2>Built around real availability</h2>
         <div class="features">
           <div class="feature"><h3>Real conflict checking</h3><p>Every request is checked against your schedule and existing bookings before it's confirmed.</p></div>
@@ -824,8 +1108,10 @@ function renderLanding() {
         </div>
       </div>
       <div class="footer">
-        <span>Meetly</span>
-        <span>Your time. Your link. Your choice.</span>
+        <span>Meetly — Your time. Your link. Your choice.</span>
+        <span class="footer-links">
+          <a data-nav="/faq">FAQ</a><a data-nav="/privacy">Privacy</a><a data-nav="/terms">Terms</a>
+        </span>
       </div>
     </div>
   `;
@@ -933,6 +1219,47 @@ function renderOnboarding() {
 }
 
 // ============================================================
+// AGENDA — groups bookings by day into a Google Calendar-style list
+// ============================================================
+const EVENT_COLORS = ["#2fb3c7", "#5b8def", "#7c6fe0", "#3ec48a", "#e0a640"];
+function renderAgenda(bookings) {
+  const todayKey = dateKey(new Date());
+  const groups = [];
+  for (const b of bookings) {
+    let g = groups.find(x => x.date === b.date);
+    if (!g) { g = { date: b.date, items: [] }; groups.push(g); }
+    g.items.push(b);
+  }
+  return `
+    <div class="agenda">
+      ${groups.map(g => {
+        const d = new Date(g.date + "T00:00:00");
+        const isToday = g.date === todayKey;
+        return `
+          <div class="agenda-group">
+            <div class="agenda-date ${isToday ? 'is-today' : ''}">
+              <div class="ad-dow">${d.toLocaleDateString(undefined, { weekday: "short" })}</div>
+              <div class="ad-num">${d.getDate()}</div>
+            </div>
+            <div class="agenda-events">
+              ${g.items.map((b, idx) => `
+                <div class="agenda-event" style="--evc:${EVENT_COLORS[idx % EVENT_COLORS.length]}">
+                  <div class="ae-time">${esc(formatTimeLabel(b.startTime))} – ${esc(formatTimeLabel(b.endTime))}</div>
+                  <div class="ae-body">
+                    <div class="ae-title">${esc(b.requesterName)}</div>
+                    ${b.reason ? `<div class="ae-sub">${esc(b.reason)}</div>` : ""}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 async function renderDashboard() {
@@ -949,7 +1276,14 @@ async function renderDashboard() {
     </div>
     <div class="panel">
       <h2>Upcoming meetings</h2>
-      <div id="upcoming-list"><div class="empty-state">Loading…</div></div>
+      <div id="upcoming-list">
+        ${Array.from({length: 3}).map(() => `
+          <div class="agenda-group">
+            <div class="agenda-date"><div class="skel" style="width:24px;height:10px;margin:0 auto 6px;"></div><div class="skel" style="width:32px;height:32px;border-radius:50%;margin:0 auto;"></div></div>
+            <div class="agenda-events"><div class="skel" style="width:100%;height:46px;border-radius:8px;"></div></div>
+          </div>
+        `).join("")}
+      </div>
     </div>
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -997,15 +1331,7 @@ async function renderDashboard() {
     if (upcoming.length === 0) {
       listEl.innerHTML = `<div class="empty-state"><strong>No upcoming meetings</strong>Confirmed meetings will appear here.</div>`;
     } else {
-      listEl.innerHTML = upcoming.slice(0, 8).map(b => `
-        <div class="meeting-row">
-          <div class="m-when">${esc(formatDateLabel(b.date))}<br>${esc(formatTimeLabel(b.startTime))}–${esc(formatTimeLabel(b.endTime))}</div>
-          <div class="m-info">
-            <div class="m-who">${esc(b.requesterName)}</div>
-            <div class="m-reason">${esc(b.reason || "")}</div>
-          </div>
-        </div>
-      `).join("");
+      listEl.innerHTML = renderAgenda(upcoming.slice(0, 12));
     }
   } catch (err) {
     console.error(err);
@@ -1033,7 +1359,7 @@ async function renderRequests() {
     <div class="tabs" id="req-tabs">
       ${["pending","accepted","declined","all"].map(t => `<div class="tab ${t===requestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
     </div>
-    <div class="panel" id="req-list"><div class="empty-state">Loading…</div></div>
+    <div class="panel" id="req-list">${skeletonRows(3)}</div>
   `);
 
   document.querySelectorAll("#req-tabs .tab").forEach(t => t.addEventListener("click", () => {
@@ -1161,7 +1487,7 @@ async function renderMyRequests() {
     <div class="tabs" id="my-req-tabs">
       ${["all","pending","accepted","declined"].map(t => `<div class="tab ${t===myRequestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
     </div>
-    <div class="panel" id="my-req-list"><div class="empty-state">Loading…</div></div>
+    <div class="panel" id="my-req-list">${skeletonRows(3)}</div>
   `);
 
   document.querySelectorAll("#my-req-tabs .tab").forEach(t => t.addEventListener("click", () => {
@@ -1273,7 +1599,14 @@ async function renderAvailabilityPage() {
       <h1>Availability</h1>
       <p>Set the hours people can request time with you.</p>
     </div>
-    <div class="panel" id="avail-panel"><div class="empty-state">Loading…</div></div>
+    <div class="panel" id="avail-panel">
+      ${Array.from({length: 5}).map(() => `
+        <div class="day-row">
+          <div class="day-row-head"><div class="skel" style="width:70px;height:16px;"></div><div class="skel" style="width:36px;height:20px;border-radius:20px;"></div></div>
+          <div class="day-ranges"><div class="skel" style="width:100%;max-width:260px;height:34px;"></div></div>
+        </div>
+      `).join("")}
+    </div>
     <button class="btn btn-primary" id="save-avail-btn">Save availability</button>
   `);
 
@@ -1287,14 +1620,16 @@ async function renderAvailabilityPage() {
     const enabled = ranges.length > 0;
     return `
       <div class="day-row" data-day="${i}">
-        <div class="day-name">${name}</div>
-        <div class="day-ranges" data-ranges-for="${i}">
-          ${enabled ? ranges.map((r, idx) => rangeLineHtml(i, idx, r.startTime, r.endTime)).join("") : ""}
+        <div class="day-row-head">
+          <div class="day-name">${name}</div>
+          <label class="toggle">
+            <input type="checkbox" data-day-toggle="${i}" ${enabled ? "checked" : ""}>
+            <span class="slider"></span>
+          </label>
         </div>
-        <label class="toggle">
-          <input type="checkbox" data-day-toggle="${i}" ${enabled ? "checked" : ""}>
-          <span class="slider"></span>
-        </label>
+        <div class="day-ranges ${enabled ? '' : 'is-off'}" data-ranges-for="${i}">
+          ${enabled ? ranges.map((r, idx) => rangeLineHtml(i, idx, r.startTime, r.endTime)).join("") : "<span data-off-placeholder>Unavailable</span>"}
+        </div>
       </div>
     `;
   }).join("");
@@ -1331,11 +1666,16 @@ async function renderAvailabilityPage() {
       const day = cb.dataset.dayToggle;
       const container = panel.querySelector(`[data-ranges-for="${day}"]`);
       const addBtn = container.querySelector("[data-add-range]");
+      const placeholder = container.querySelector("[data-off-placeholder]");
       if (cb.checked && rangeLinesOf(container).length === 0) {
+        if (placeholder) placeholder.remove();
+        container.classList.remove("is-off");
         addBtn.insertAdjacentHTML("beforebegin", rangeLineHtml(day, 0, "09:00", "17:00"));
         attachRangeRemovers(container);
       } else if (!cb.checked) {
         clearRangeLines(container);
+        container.classList.add("is-off");
+        if (!placeholder) addBtn.insertAdjacentHTML("beforebegin", `<span data-off-placeholder>Unavailable</span>`);
       }
     });
   });
@@ -1351,6 +1691,11 @@ async function renderAvailabilityPage() {
     addBtn.textContent = "+ Add range";
     addBtn.setAttribute("data-add-range", "");
     addBtn.addEventListener("click", () => {
+      const placeholder = rangesContainer.querySelector("[data-off-placeholder]");
+      if (placeholder) placeholder.remove();
+      rangesContainer.classList.remove("is-off");
+      const toggle = row.querySelector("[data-day-toggle]");
+      if (toggle && !toggle.checked) toggle.checked = true;
       addBtn.insertAdjacentHTML("beforebegin", rangeLineHtml(day, rangeLinesOf(rangesContainer).length, "15:00", "19:00"));
       attachRangeRemovers(rangesContainer);
     });
@@ -1479,7 +1824,19 @@ async function renderProfilePage() {
 // PUBLIC PROFILE + BOOKING FLOW
 // ============================================================
 async function renderPublicProfile(username) {
-  appEl.innerHTML = `<div class="loading-screen">Loading…</div>`;
+  appEl.innerHTML = `
+    <div class="public-wrap">
+      <div class="public-header">
+        <div class="skel" style="width:56px;height:56px;border-radius:50%;"></div>
+        <div style="flex:1;">
+          <div class="skel" style="width:140px;height:18px;margin-bottom:8px;"></div>
+          <div class="skel" style="width:90px;height:13px;"></div>
+        </div>
+      </div>
+      <div class="skel" style="width:100%;height:36px;margin:20px 0 32px;"></div>
+      <div class="skel" style="width:100%;height:220px;border-radius:12px;"></div>
+    </div>
+  `;
   const owner = await getUserByUsername(username);
   if (!owner) return renderNotFound();
 
@@ -1516,8 +1873,14 @@ function renderPublicShell(state) {
         ${[1,2,3,4,5].map(n => `<div class="dot ${state.step >= n ? 'done' : ''}"></div>`).join("")}
       </div>
       <div id="booking-step-content"></div>
+      <div class="footer-links" style="margin-top:40px;justify-content:center;font-size:12px;">
+        <a data-nav="/faq">FAQ</a><a data-nav="/privacy">Privacy</a><a data-nav="/terms">Terms</a>
+      </div>
     </div>
   `;
+  appEl.querySelectorAll(".footer-links [data-nav]").forEach(a => a.addEventListener("click", (e) => {
+    e.preventDefault(); navigate(a.dataset.nav);
+  }));
   renderBookingStep(state);
 }
 
@@ -1530,7 +1893,32 @@ async function renderBookingStep(state) {
   if (state.step === 5) return renderStepReview(state, content);
 }
 
+function renderSignInGate(state, content) {
+  content.innerHTML = `
+    <div class="panel" style="text-align:center;padding:36px 20px;">
+      <div style="font-size:28px;margin-bottom:14px;">🔒</div>
+      <h2 style="margin-bottom:8px;">Sign in to schedule</h2>
+      <p style="color:var(--text-dim);font-size:13.5px;max-width:34ch;margin:0 auto 22px;">
+        To request time with ${esc(state.owner.displayName)}, sign in with Google first. It keeps your request tied to your account so they know who's asking.
+      </p>
+      <button class="google-btn" id="gate-signin-btn" style="max-width:280px;margin:0 auto;">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.7H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.72c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72V4.94H.96A8.99 8.99 0 000 9c0 1.45.35 2.83.96 4.06l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.94l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
+        Continue with Google
+      </button>
+    </div>
+  `;
+  document.getElementById("gate-signin-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner dark"></span> Signing in…`;
+    await handleGoogleSignIn(() => {});
+    if (!currentUser) { renderSignInGate(state, content); return; }
+    renderBookingStep(state);
+  });
+}
+
 function renderStepDate(state, content) {
+  if (!currentUser) return renderSignInGate(state, content);
   const year = state.calendarYear, month = state.calendarMonth;
   const firstDay = new Date(year, month, 1);
   const startWeekday = firstDay.getDay();
@@ -1783,6 +2171,90 @@ function renderStepReview(state, content) {
       btn.textContent = "Send request";
     }
   });
+}
+
+// ============================================================
+// PRIVACY / TERMS / FAQ
+// ============================================================
+function legalBackLink() {
+  return `<a class="doc-back" data-nav="/">← Back to Meetly</a>`;
+}
+function wireLegalNav(root) {
+  root.querySelectorAll("[data-nav]").forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); navigate(a.dataset.nav); }));
+}
+
+function renderLegalPage(kind) {
+  const isPrivacy = kind === "privacy";
+  appEl.innerHTML = `
+    <div class="doc-page">
+      ${legalBackLink()}
+      <h1>${isPrivacy ? "Privacy Policy" : "Terms of Service"}</h1>
+      <p class="doc-updated">Last updated September 27, 2026</p>
+      ${isPrivacy ? `
+        <p>This policy explains what Meetly collects and how it's used. Meetly is a scheduling tool — we only collect what's needed to make booking work.</p>
+        <h2>What we collect</h2>
+        <ul>
+          <li>Your name, email address and profile photo from Google Sign-In.</li>
+          <li>The availability, bookings and meeting requests you create or receive.</li>
+          <li>Basic account metadata, like your chosen username.</li>
+        </ul>
+        <h2>How it's used</h2>
+        <p>Your data is used only to run Meetly: matching booking requests to your availability, sending email notifications about requests, and showing your schedule to people you share your link with. We don't sell your data or show ads.</p>
+        <h2>Who can see what</h2>
+        <p>Your availability is public so people can book time with you. Your email and personal details are only shared with someone once you accept a meeting with them.</p>
+        <h2>Data retention</h2>
+        <p>You can delete your availability at any time from the Availability page. To delete your account entirely, contact us using the details below.</p>
+        <h2>Contact</h2>
+        <p>Questions about this policy can be sent to privacy@meetly.example.</p>
+      ` : `
+        <p>By using Meetly, you agree to these terms. Please read them along with our Privacy Policy.</p>
+        <h2>Your account</h2>
+        <p>You're responsible for the accuracy of your availability and for responding to requests in good faith. You must sign in with a valid Google account to book or receive meetings.</p>
+        <h2>Acceptable use</h2>
+        <ul>
+          <li>Don't use Meetly to harass, spam, or mislead other users.</li>
+          <li>Don't attempt to book time you don't intend to attend.</li>
+          <li>Don't scrape or misuse other users' public availability data.</li>
+        </ul>
+        <h2>No guarantee of availability</h2>
+        <p>Meetly checks for scheduling conflicts automatically, but confirming or declining a request is always up to the meeting owner. We don't guarantee any request will be accepted.</p>
+        <h2>Limitation of liability</h2>
+        <p>Meetly is provided as-is. We aren't liable for missed meetings, scheduling errors, or losses arising from use of the service.</p>
+        <h2>Changes</h2>
+        <p>We may update these terms occasionally. Continued use of Meetly after a change means you accept the update.</p>
+      `}
+    </div>
+  `;
+  wireLegalNav(appEl);
+}
+
+const FAQ_ITEMS = [
+  { q: "How does Meetly work?", a: "Set your available hours once. Share your personal Meetly link, and anyone can request a time that fits your schedule — no back-and-forth messages." },
+  { q: "Is Meetly free to use?", a: "Yes, creating a profile, setting availability, and accepting bookings is free." },
+  { q: "Do I need a Google account?", a: "Yes — Meetly uses Google Sign-In for both people setting up availability and people requesting a meeting, so requests are tied to a real account." },
+  { q: "Can I edit or cancel my availability?", a: "Yes, open the Availability page any time to add, remove, or change your hours for any day of the week." },
+  { q: "What happens after someone requests a meeting?", a: "You'll get a notification and an email. You can accept or decline from the Requests page — the requester is notified either way." },
+  { q: "Can I reschedule a confirmed meeting?", a: "Right now, decline the existing request and ask the other person to submit a new one for a different time. Rescheduling in one step is on our roadmap." },
+  { q: "Is my schedule visible to everyone?", a: "Only your available time slots are public — enough for people to know when to book. Personal details are shared only once you accept a request." }
+];
+
+function renderFaqPage() {
+  appEl.innerHTML = `
+    <div class="doc-page">
+      ${legalBackLink()}
+      <h1>Frequently asked questions</h1>
+      <p class="doc-updated">Everything you need to know about using Meetly.</p>
+      <div>
+        ${FAQ_ITEMS.map(item => `
+          <details class="faq-item">
+            <summary>${esc(item.q)}</summary>
+            <div class="faq-answer">${esc(item.a)}</div>
+          </details>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  wireLegalNav(appEl);
 }
 
 function renderNotFound() {
