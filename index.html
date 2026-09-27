@@ -46,7 +46,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
@@ -62,7 +62,7 @@
   window.__meetly = {
     auth, db, googleProvider,
     GoogleAuthProvider,
-    signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
+    signInWithPopup, signOut, onAuthStateChanged,
     doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
     serverTimestamp, Timestamp
   };
@@ -136,7 +136,7 @@
   .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
   .btn-ghost:hover { border-color: var(--text-faint); }
   .btn-danger { background: transparent; border-color: var(--border); color: var(--danger); }
-  .btn-danger:hover { border-color: var(--danger); background: rgba(226,100,92,.08); }
+  .btn-danger:hover { border-color: var(--danger); background: rgba(217,112,102,.08); }
   .btn-sm { padding: 7px 12px; font-size: 13px; }
   .btn-block { width: 100%; }
 
@@ -253,6 +253,27 @@
     display: flex; align-items: center; padding: 0 10px; background: var(--panel-2); color: var(--text-faint); font-size: 13px; border-right: 1px solid var(--border);
   }
   .url-prefix-input input { border: none; border-radius: 0; flex: 1; }
+
+  /* ---------- Profile page ---------- */
+  .profile-header-card { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .profile-avatar-lg {
+    width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+    border: 2px solid var(--accent-dim);
+  }
+  .profile-avatar-fallback {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel-2); color: var(--text-dim); font-size: 28px; font-weight: 600;
+  }
+  .profile-header-info { flex: 1; min-width: 160px; }
+  .profile-header-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+  .profile-header-username { font-size: 13.5px; color: var(--accent); margin-top: 2px; }
+  .profile-header-email { font-size: 12.5px; color: var(--text-faint); margin-top: 2px; }
+  .profile-header-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .account-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid var(--border-soft); font-size: 13.5px; color: var(--text-dim);
+  }
+  .account-row:last-of-type { border-bottom: none; }
 
   /* ---------- App shell ---------- */
   .app-shell { display: flex; min-height: 100vh; }
@@ -579,7 +600,7 @@ window.addEventListener("meetly:ready", initMeetly, { once: true });
 
 function initMeetly() {
 const {
-  auth, db, googleProvider, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
+  auth, db, googleProvider, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
   serverTimestamp, Timestamp
 } = window.__meetly;
@@ -696,7 +717,8 @@ function formatForViewer(dateStr, timeStr, ownerTz, viewerTz) {
 }
 
 // ---- Google Calendar -------------------------------------------------------
-// Zero-setup "quick add" link — works for anyone, no sign-in scopes needed.
+// Zero-setup "quick add" link — works for anyone, no sign-in or extra
+// permissions needed. Opens Google Calendar with the event pre-filled.
 function googleCalendarLink({ title, details, dateStr, startTime, endTime, timeZone }) {
   const startUtc = zonedDateTimeToUtc(dateStr, startTime, timeZone || "UTC");
   const endUtc = zonedDateTimeToUtc(dateStr, endTime, timeZone || "UTC");
@@ -706,33 +728,6 @@ function googleCalendarLink({ title, details, dateStr, startTime, endTime, timeZ
     dates: `${fmt(startUtc)}/${fmt(endUtc)}`, details: details || ""
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
-}
-// Best-effort direct push into a connected Google Calendar via the Calendar
-// API. Requires the extra "calendar.events" OAuth scope (see connectGoogleCalendar
-// in the Profile page) — if that hasn't been granted, or the API call fails
-// for any reason (token expired, Calendar API not enabled on the Google Cloud
-// project, offline, etc.), this fails silently and callers fall back to the
-// googleCalendarLink() quick-add link instead. It never blocks the booking flow.
-async function pushToGoogleCalendar({ title, details, dateStr, startTime, endTime, timeZone }) {
-  const token = window.__meetlyCalendarToken;
-  if (!token) return { ok: false };
-  try {
-    const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-      body: JSON.stringify({
-        summary: title || "Meetly meeting",
-        description: details || "",
-        start: { dateTime: zonedDateTimeToUtc(dateStr, startTime, timeZone || "UTC").toISOString() },
-        end: { dateTime: zonedDateTimeToUtc(dateStr, endTime, timeZone || "UTC").toISOString() }
-      })
-    });
-    if (!res.ok) return { ok: false, status: res.status };
-    return { ok: true };
-  } catch (err) {
-    console.error("Google Calendar push failed:", err);
-    return { ok: false, error: err };
-  }
 }
 
 // ============================================================
@@ -1612,19 +1607,6 @@ async function acceptRequest(btn, req) {
       createdAt: serverTimestamp()
     });
 
-    // Best-effort: if this owner has connected Google Calendar, push the
-    // confirmed meeting straight in. Silently does nothing if not connected,
-    // or if the push fails for any reason — the "Add to Google Calendar"
-    // link shown on the request card always works as a fallback either way.
-    if (currentProfile.googleCalendarConnected) {
-      pushToGoogleCalendar({
-        title: `Meetly: meeting with ${req.requesterName || "a guest"}`,
-        details: req.reason || "",
-        dateStr: req.date, startTime: req.startTime, endTime: req.endTime,
-        timeZone: currentProfile.timezone
-      });
-    }
-
     const emailResult = await sendAcceptedEmail({
       requesterEmail: req.requesterEmail,
       requesterName: req.requesterName,
@@ -2044,21 +2026,32 @@ async function importDeleteDoc() {
 // PROFILE PAGE
 // ============================================================
 async function renderProfilePage() {
+  const photo = currentProfile.photoURL || currentUser.photoURL || "";
+  const joined = currentUser.metadata && currentUser.metadata.creationTime
+    ? new Date(currentUser.metadata.creationTime).toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : "";
+
   appShell("profile", `
     <div class="page-header">
       <h1>Profile</h1>
       <p>This is what people see on your public Meetly page.</p>
     </div>
+
+    <div class="panel profile-header-card">
+      ${photo ? `<img class="profile-avatar-lg" src="${esc(photo)}" alt="">` : `<div class="profile-avatar-lg profile-avatar-fallback">${esc((currentProfile.displayName || "?")[0].toUpperCase())}</div>`}
+      <div class="profile-header-info">
+        <div class="profile-header-name">${esc(currentProfile.displayName)}</div>
+        <div class="profile-header-username">meetly.app/${esc(currentProfile.username)}</div>
+        ${currentUser.email ? `<div class="profile-header-email">${esc(currentUser.email)}</div>` : ""}
+      </div>
+      <div class="profile-header-actions">
+        <button class="btn btn-ghost btn-sm" id="pf-copy-link">Copy link</button>
+        <a class="btn btn-ghost btn-sm" href="/${esc(currentProfile.username)}" target="_blank" rel="noopener">View page</a>
+      </div>
+    </div>
+
     <div class="panel" style="max-width:480px;">
-      <div class="field">
-        <label>Full name</label>
-        <input id="pf-name" type="text" value="${esc(currentProfile.displayName)}" maxlength="60">
-      </div>
-      <div class="field">
-        <label>Username</label>
-        <div class="url-prefix-input"><span>meetly.app/</span><input id="pf-username" type="text" value="${esc(currentProfile.username)}" maxlength="20"></div>
-        <div class="field-error" id="pf-error" style="display:none;"></div>
-      </div>
+      <h2>About you</h2>
       <div class="field">
         <label>Bio</label>
         <textarea id="pf-bio" rows="3" maxlength="160">${esc(currentProfile.bio || "")}</textarea>
@@ -2071,85 +2064,56 @@ async function renderProfilePage() {
         </div>
         <div class="field-hint">Bookers in a different timezone automatically see your times converted to theirs.</div>
       </div>
+      <div class="field-hint" style="margin-bottom:12px;">Your name and username come from your Google account and can't be changed here.</div>
       <button class="btn btn-primary" id="pf-save">Save changes</button>
     </div>
+
     <div class="panel" style="max-width:480px;">
-      <h2 style="margin-bottom:6px;">Google Calendar</h2>
-      <p style="color:var(--text-dim);font-size:13px;margin:0 0 16px;">Connect your calendar so confirmed meetings are added for you automatically. (Everyone can also add individual meetings with the "Add to Google Calendar" link — no connection needed for that.)</p>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <button class="btn ${currentProfile.googleCalendarConnected ? 'btn-ghost' : 'btn-primary'} btn-sm" id="gcal-connect-btn">
-          ${currentProfile.googleCalendarConnected ? "Reconnect Google Calendar" : "Connect Google Calendar"}
-        </button>
-        ${currentProfile.googleCalendarConnected ? `<span style="font-size:12.5px;color:var(--success);">✓ Connected</span>` : ""}
+      <h2>Account</h2>
+      <div class="account-row">
+        <span>Signed in with Google</span>
       </div>
+      ${joined ? `<div class="account-row"><span>Member since ${esc(joined)}</span></div>` : ""}
+      <button class="btn btn-danger btn-sm" id="pf-signout" style="margin-top:12px;">Sign out</button>
     </div>
   `);
+
+  document.getElementById("pf-copy-link").addEventListener("click", async () => {
+    const url = `${window.location.origin}/${currentProfile.username}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied.", "success");
+    } catch {
+      toast("Couldn't copy link.", "error");
+    }
+  });
 
   document.getElementById("pf-tz-detect").addEventListener("click", () => {
     document.getElementById("pf-tz").value = getViewerTimeZone();
   });
 
-  document.getElementById("gcal-connect-btn").addEventListener("click", async (e) => {
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner dark"></span> Connecting…`;
-    try {
-      const calProvider = new GoogleAuthProvider();
-      calProvider.addScope("https://www.googleapis.com/auth/calendar.events");
-      const result = await reauthenticateWithPopup(auth.currentUser, calProvider);
-      const cred = GoogleAuthProvider.credentialFromResult(result);
-      if (cred && cred.accessToken) {
-        window.__meetlyCalendarToken = cred.accessToken;
-        await updateDoc(doc(db, "users", currentUser.uid), { googleCalendarConnected: true, updatedAt: serverTimestamp() });
-        currentProfile = { ...currentProfile, googleCalendarConnected: true };
-        toast("Google Calendar connected.", "success");
-      } else {
-        toast("Couldn't get calendar access from Google.", "error");
-      }
-    } catch (err) {
-      console.error(err);
-      toast("Couldn't connect Google Calendar.", "error");
-    }
-    renderProfilePage();
+  document.getElementById("pf-signout").addEventListener("click", async () => {
+    await signOut(auth);
+    navigate("/");
   });
 
   document.getElementById("pf-save").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
-    const name = document.getElementById("pf-name").value.trim();
-    const usernameRaw = document.getElementById("pf-username").value.trim().toLowerCase();
     const bio = document.getElementById("pf-bio").value.trim();
     const tz = document.getElementById("pf-tz").value.trim();
-    const errorEl = document.getElementById("pf-error");
-    errorEl.style.display = "none";
-
-    const vErr = validateUsername(usernameRaw);
-    if (vErr) { errorEl.textContent = vErr; errorEl.style.display = "block"; return; }
 
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner"></span> Saving…`;
     try {
-      if (usernameRaw !== currentProfile.username) {
-        const taken = await isUsernameTaken(usernameRaw, currentUser.uid);
-        if (taken) {
-          errorEl.textContent = "That username is already taken.";
-          errorEl.style.display = "block";
-          btn.disabled = false; btn.textContent = "Save changes";
-          return;
-        }
-      }
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        displayName: name, username: usernameRaw, bio, timezone: tz, updatedAt: serverTimestamp()
-      });
-      currentProfile = { ...currentProfile, displayName: name, username: usernameRaw, bio, timezone: tz };
+      await updateDoc(doc(db, "users", currentUser.uid), { bio, timezone: tz, updatedAt: serverTimestamp() });
+      currentProfile = { ...currentProfile, bio, timezone: tz };
       toast("Profile updated.", "success");
-      btn.textContent = "Save changes";
-      btn.disabled = false;
     } catch (err) {
       console.error(err);
       toast("Couldn't save profile.", "error");
-      btn.disabled = false;
-      btn.textContent = "Save changes";
     }
+    btn.disabled = false;
+    btn.textContent = "Save changes";
   });
 }
 
