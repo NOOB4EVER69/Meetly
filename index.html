@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meetly — Your time. Your link. Your choice.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+
+<script type="module">
+  // ==========================================================================
+  // CONFIGURATION — Firebase + EmailJS
+  // ==========================================================================
+  window.__MEETLY_CONFIG__ = {
+    firebase: {
+      apiKey: "AIzaSyAsAIvNSgk6cAyc9V2oLHPRPb0M4jS2GCE",
+      authDomain: "meetly-e2af4.firebaseapp.com",
+      projectId: "meetly-e2af4",
+      storageBucket: "meetly-e2af4.firebasestorage.app",
+      messagingSenderId: "522935502258",
+      appId: "1:522935502258:web:2f03849d9a6762583690ab"
+    },
+    emailjs: {
+      // Public key only. NEVER put your EmailJS private key in frontend code —
+      // the browser SDK does not need it, and exposing it lets anyone send
+      // email through your account.
+      publicKey: "k4XusmTspTc444r3",
+      serviceId: "service_n0wxm37",       // e.g. "service_abc123" — from EmailJS dashboard > Email Services
+      templateIds: {
+        newRequest: "template_lo4tn8e" // e.g. "template_xyz789" — created below
+      }
+    }
+  };
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
+    getDocs, addDoc, serverTimestamp, Timestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const CONFIG = window.__MEETLY_CONFIG__;
+  const app = initializeApp(CONFIG.firebase);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const googleProvider = new GoogleAuthProvider();
+
+  window.__meetly = {
+    auth, db, googleProvider,
+    signInWithPopup, signOut, onAuthStateChanged,
+    doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
+    serverTimestamp, Timestamp
+  };
+
+  // Load EmailJS (UMD build) after Firebase is ready
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+  s.onload = () => {
+    window.emailjs.init({ publicKey: CONFIG.emailjs.publicKey });
+    window.dispatchEvent(new Event("meetly:ready"));
+  };
+  document.head.appendChild(s);
+</script>
+
+<style>
+  :root {
+    --bg: #0e1013;
+    --panel: #16191d;
+    --panel-2: #1c2025;
+    --border: #262b31;
+    --text: #eceef0;
+    --text-dim: #9aa1ab;
+    --text-faint: #5f6670;
+    --accent: #5b8def;
+    --accent-dim: #3a5a9c;
+    --accent-text: #0e1013;
+    --danger: #e2645c;
+    --success: #4caf82;
+    --radius: 8px;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Source Serif 4', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+  #app { min-height: 100%; }
+
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 18px; border-radius: var(--radius); border: 1px solid transparent;
+    font-size: 14px; font-weight: 600; transition: background .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4a7ede; }
+  .btn-primary:disabled { background: var(--accent-dim); cursor: not-allowed; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--text-faint); }
+  .btn-danger { background: transparent; border-color: var(--border); color: var(--danger); }
+  .btn-danger:hover { border-color: var(--danger); background: rgba(226,100,92,.08); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+  .btn-block { width: 100%; }
+
+  /* ---------- Landing ---------- */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0;
+  }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .hero {
+    padding: 96px 0 72px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: clamp(38px, 6vw, 60px); line-height: 1.08; letter-spacing: -0.01em;
+    margin: 0 0 20px; max-width: 14ch;
+  }
+  .hero p { color: var(--text-dim); font-size: 18px; max-width: 46ch; margin: 0 0 32px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+  .section-label { font-size: 13px; color: var(--text-faint); margin-bottom: 8px; }
+  .section h2 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 40px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step { border-left: 2px solid var(--border); padding-left: 20px; }
+  .step h3 { font-size: 16px; margin: 0 0 8px; }
+  .step p { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .feature { padding: 24px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+  .feature h3 { font-size: 15px; margin: 0 0 8px; }
+  .feature p { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  .footer { padding: 32px 0; color: var(--text-faint); font-size: 13px; display: flex; justify-content: space-between; }
+
+  @media (max-width: 720px) {
+    .steps, .features { grid-template-columns: 1fr; }
+    .hero { padding: 56px 0 48px; }
+  }
+
+  /* ---------- Login ---------- */
+  .center-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .login-card {
+    width: 100%; max-width: 380px; text-align: center;
+  }
+  .login-card .logo { display: block; margin-bottom: 28px; }
+  .login-card h1 { font-family: var(--font-display); font-weight: 500; font-size: 26px; margin: 0 0 12px; }
+  .login-card p { color: var(--text-dim); font-size: 14px; margin: 0 0 32px; }
+  .google-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 12px 18px; border-radius: var(--radius);
+    background: #fff; color: #1f1f1f; font-weight: 600; font-size: 14px; border: none;
+  }
+  .google-btn:hover { background: #f2f2f2; }
+  .google-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ---------- Onboarding ---------- */
+  .onboard-card {
+    width: 100%; max-width: 420px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px;
+  }
+  .onboard-card h1 { font-family: var(--font-display); font-weight: 500; font-size: 22px; margin: 0 0 6px; }
+  .onboard-card > p { color: var(--text-dim); font-size: 14px; margin: 0 0 24px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 12px; border-radius: 6px; font-size: 14px;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .field-hint { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+  .field-error { font-size: 12px; color: var(--danger); margin-top: 6px; }
+  .url-prefix-input {
+    display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  }
+  .url-prefix-input span {
+    display: flex; align-items: center; padding: 0 10px; background: var(--panel-2); color: var(--text-faint); font-size: 13px; border-right: 1px solid var(--border);
+  }
+  .url-prefix-input input { border: none; border-radius: 0; flex: 1; }
+
+  /* ---------- App shell ---------- */
+  .app-shell { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px; flex-shrink: 0; border-right: 1px solid var(--border);
+    padding: 20px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar .logo { padding: 6px 10px 22px; }
+  .side-link {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 6px;
+    color: var(--text-dim); font-size: 14px; font-weight: 500;
+  }
+  .side-link:hover { background: var(--panel); color: var(--text); }
+  .side-link.active { background: var(--panel-2); color: var(--text); }
+  .side-spacer { flex: 1; }
+  .side-user { display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid var(--border); margin-top: 8px; }
+  .side-user img { width: 30px; height: 30px; border-radius: 50%; }
+  .side-user .who { flex: 1; overflow: hidden; }
+  .side-user .who .n { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .side-user .who .u { font-size: 12px; color: var(--text-faint); }
+  .side-user button { background: none; border: none; color: var(--text-faint); font-size: 12px; }
+  .side-user button:hover { color: var(--text); }
+
+  .main { flex: 1; min-width: 0; }
+  .topbar {
+    display: none;
+    align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+  }
+  .main-content { padding: 32px; max-width: 880px; }
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-family: var(--font-display); font-weight: 500; font-size: 24px; margin: 0 0 4px; }
+  .page-header p { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat-card .label { font-size: 12px; color: var(--text-faint); margin-bottom: 6px; }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .stat-card.link-card .value { font-size: 13px; font-weight: 500; word-break: break-all; color: var(--accent); }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .panel h2 { font-size: 15px; margin: 0 0 16px; }
+  .empty-state { text-align: center; padding: 32px 16px; color: var(--text-faint); font-size: 14px; }
+  .empty-state strong { display: block; color: var(--text-dim); font-size: 14px; margin-bottom: 4px; }
+
+  .meeting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .meeting-row:last-child { border-bottom: none; }
+  .meeting-row .m-when { font-size: 13px; color: var(--text-faint); width: 130px; flex-shrink: 0; }
+  .meeting-row .m-info { flex: 1; }
+  .meeting-row .m-info .m-who { font-size: 14px; font-weight: 600; }
+  .meeting-row .m-info .m-reason { font-size: 13px; color: var(--text-dim); }
+
+  .request-card { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .request-card:last-child { border-bottom: none; }
+  .request-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .request-top img { width: 28px; height: 28px; border-radius: 50%; }
+  .request-top .r-name { font-size: 14px; font-weight: 600; }
+  .request-top .r-username { font-size: 13px; color: var(--text-faint); }
+  .request-meta { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .request-note { font-size: 13px; color: var(--text-dim); background: var(--panel-2); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
+  .request-actions { display: flex; gap: 8px; }
+  .status-pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em; }
+  .status-pill.pending { background: rgba(91,141,239,.15); color: var(--accent); }
+  .status-pill.accepted { background: rgba(76,175,130,.15); color: var(--success); }
+  .status-pill.declined { background: rgba(226,100,92,.15); color: var(--danger); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 10px 14px; font-size: 14px; color: var(--text-dim); border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--text); border-color: var(--accent); }
+
+  .day-row {
+    display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row .day-name { width: 100px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .day-row .day-ranges { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .range-line { display: flex; align-items: center; gap: 8px; }
+  .range-line input[type=time] {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 8px; border-radius: 6px; font-size: 13px;
+  }
+  .toggle {
+    position: relative; width: 36px; height: 20px; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider {
+    position: absolute; inset: 0; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 20px; transition: .15s;
+  }
+  .toggle .slider:before {
+    content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px;
+    background: var(--text-faint); border-radius: 50%; transition: .15s;
+  }
+  .toggle input:checked + .slider { background: var(--accent-dim); border-color: var(--accent); }
+  .toggle input:checked + .slider:before { transform: translateX(16px); background: #fff; }
+
+  .icon-btn { background: none; border: none; color: var(--text-faint); padding: 4px; font-size: 16px; }
+  .icon-btn:hover { color: var(--danger); }
+
+  /* ---------- Public profile / booking ---------- */
+  .public-wrap { max-width: 560px; margin: 0 auto; padding: 48px 20px 80px; }
+  .public-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .public-header img { width: 56px; height: 56px; border-radius: 50%; }
+  .public-header h1 { font-size: 20px; margin: 0; }
+  .public-header .u { color: var(--text-faint); font-size: 14px; }
+  .public-bio { color: var(--text-dim); font-size: 14px; margin: 12px 0 32px; }
+
+  .booking-steps-nav { display: flex; gap: 6px; margin-bottom: 24px; }
+  .booking-steps-nav .dot { height: 3px; flex: 1; background: var(--border); border-radius: 2px; }
+  .booking-steps-nav .dot.done { background: var(--accent); }
+
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
+  .cal-weekday { text-align: center; font-size: 11px; color: var(--text-faint); padding-bottom: 6px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 13px; color: var(--text-dim); background: var(--panel-2);
+    border: 1px solid transparent;
+  }
+  .cal-day.selectable { color: var(--text); cursor: pointer; }
+  .cal-day.selectable:hover { border-color: var(--accent); }
+  .cal-day.disabled { color: var(--text-faint); opacity: .35; cursor: default; }
+  .cal-day.selected { background: var(--accent); color: #fff; font-weight: 600; }
+  .cal-day.empty { background: transparent; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .cal-nav button { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 28px; height: 28px; }
+  .cal-nav .month-label { font-size: 14px; font-weight: 600; }
+
+  .slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .slot-btn {
+    padding: 10px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13px; text-align: center;
+  }
+  .slot-btn:hover { border-color: var(--accent); }
+  .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .duration-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .duration-btn {
+    padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13px;
+  }
+  .duration-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .reason-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .reason-chip {
+    padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); font-size: 13px;
+  }
+  .reason-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .booking-summary { background: var(--panel-2); border-radius: 8px; padding: 14px; margin-top: 16px; font-size: 13px; color: var(--text-dim); }
+  .booking-summary strong { color: var(--text); }
+
+  .step-actions { display: flex; justify-content: space-between; margin-top: 24px; gap: 10px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center;
+    justify-content: center; z-index: 100; padding: 20px;
+  }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; width: 100%; max-width: 420px;
+  }
+  .modal h3 { font-size: 16px; margin: 0 0 6px; }
+  .modal p { font-size: 13px; color: var(--text-dim); margin: 0 0 16px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+  /* ---------- Toasts ---------- */
+  #toast-stack {
+    position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px;
+    z-index: 200; max-width: 320px;
+  }
+  .toast {
+    background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    color: var(--text); padding: 12px 14px; border-radius: 8px; font-size: 13px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    animation: toast-in .15s ease-out;
+  }
+  .toast.success { border-left-color: var(--success); }
+  .toast.error { border-left-color: var(--danger); }
+  .toast.warning { border-left-color: #d6a94f; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---------- Misc ---------- */
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite; display: inline-block;
+  }
+  .spinner.dark { border-color: rgba(0,0,0,.2); border-top-color: #1f1f1f; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: var(--text-faint); }
+  .skel { background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel) 50%, var(--panel-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  @media (max-width: 860px) {
+    .sidebar { display: none; }
+    .topbar { display: flex; }
+    .main-content { padding: 20px; }
+    .cards-row { grid-template-columns: repeat(2, 1fr); }
+    .app-shell.mobile-drawer-open .sidebar {
+      display: flex; position: fixed; inset: 0 auto 0 0; z-index: 90; background: var(--bg); width: 240px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"><div class="loading-screen">Loading…</div></div>
+<div id="toast-stack"></div>
+
+<script type="module">
+window.addEventListener("meetly:ready", initMeetly, { once: true });
+
+function initMeetly() {
+const {
+  auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+  doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
+  serverTimestamp, Timestamp
+} = window.__meetly;
+const CONFIG = window.__MEETLY_CONFIG__;
+
+const appEl = document.getElementById("app");
+
+// ============================================================
+// UTIL: escaping, toasts, routing
+// ============================================================
+function esc(str) {
+  const d = document.createElement("div");
+  d.textContent = str == null ? "" : String(str);
+  return d.innerHTML;
+}
+
+function toast(message, type = "info") {
+  const stack = document.getElementById("toast-stack");
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  stack.appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+function navigate(path) {
+  window.history.pushState({}, "", path);
+  route();
+}
+window.addEventListener("popstate", route);
+
+const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const DAY_KEYS = ["sun","mon","tue","wed","thu","fri","sat"];
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function dateKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function timeToMinutes(t) { const [h,m] = t.split(":").map(Number); return h*60+m; }
+function minutesToTime(m) { return `${pad2(Math.floor(m/60))}:${pad2(m%60)}`; }
+function formatTimeLabel(t) {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${pad2(m)} ${ampm}`;
+}
+function formatDateLabel(dk) {
+  const [y,mo,da] = dk.split("-").map(Number);
+  const d = new Date(y, mo-1, da);
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;      // Firebase auth user
+let currentProfile = null;   // Firestore users/{uid} doc data
+let authReady = false;
+
+// ============================================================
+// EMAIL — sending via EmailJS
+// ============================================================
+async function sendNewRequestEmail({ ownerEmail, ownerName, requesterName, requesterUsername, date, startTime, endTime, duration, reason, note }) {
+  const { serviceId, templateIds } = CONFIG.emailjs;
+  if (!serviceId || serviceId.startsWith("YOUR_") || !templateIds.newRequest || templateIds.newRequest.startsWith("YOUR_")) {
+    console.warn("EmailJS not configured yet — skipping email send.");
+    return { ok: false, skipped: true };
+  }
+  try {
+    await window.emailjs.send(serviceId, templateIds.newRequest, {
+      to_email: ownerEmail,
+      owner_name: ownerName,
+      requester_name: requesterName,
+      requester_username: requesterUsername,
+      date: formatDateLabel(date),
+      start_time: formatTimeLabel(startTime),
+      end_time: formatTimeLabel(endTime),
+      duration: `${duration} minutes`,
+      reason: reason || "—",
+      note: note || "—"
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("EmailJS send failed:", err);
+    return { ok: false, error: err };
+  }
+}
+
+// ============================================================
+// FIRESTORE HELPERS
+// ============================================================
+async function getUserByUsername(username) {
+  const q = query(collection(db, "users"), where("username", "==", username.toLowerCase()));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { uid: d.id, ...d.data() };
+}
+
+async function isUsernameTaken(username, excludeUid) {
+  const existing = await getUserByUsername(username);
+  return !!existing && existing.uid !== excludeUid;
+}
+
+function validateUsername(u) {
+  if (!u) return "Username is required.";
+  if (u.length < 3 || u.length > 20) return "Username must be 3–20 characters.";
+  if (!/^[a-z0-9._-]+$/.test(u)) return "Only lowercase letters, numbers, . _ - are allowed.";
+  return null;
+}
+
+async function loadAvailability(ownerId) {
+  const q = query(collection(db, "availability"), where("ownerId", "==", ownerId));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function loadExceptionsForDate(ownerId, dk) {
+  const q = query(collection(db, "availabilityExceptions"), where("ownerId", "==", ownerId), where("date", "==", dk));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function loadBookingsForDate(ownerId, dk) {
+  const q = query(collection(db, "bookings"), where("ownerId", "==", ownerId), where("date", "==", dk), where("status", "==", "confirmed"));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// Merge regular availability + exceptions + bookings -> list of free [start,end] minute ranges
+async function getAvailableRangesForDate(ownerId, dk, weekday) {
+  const avail = await loadAvailability(ownerId);
+  let ranges = avail
+    .filter(a => a.dayOfWeek === weekday)
+    .map(a => [timeToMinutes(a.startTime), timeToMinutes(a.endTime)]);
+
+  const exceptions = await loadExceptionsForDate(ownerId, dk);
+  for (const ex of exceptions) {
+    if (ex.type === "unavailable_day") { ranges = []; continue; }
+    if (ex.type === "busy") {
+      const busyStart = timeToMinutes(ex.startTime), busyEnd = timeToMinutes(ex.endTime);
+      const next = [];
+      for (const [s, e] of ranges) {
+        if (busyEnd <= s || busyStart >= e) { next.push([s, e]); continue; }
+        if (busyStart > s) next.push([s, busyStart]);
+        if (busyEnd < e) next.push([busyEnd, e]);
+      }
+      ranges = next;
+    }
+    if (ex.type === "custom_availability") {
+      ranges.push([timeToMinutes(ex.startTime), timeToMinutes(ex.endTime)]);
+    }
+  }
+
+  const bookings = await loadBookingsForDate(ownerId, dk);
+  for (const b of bookings) {
+    const bStart = timeToMinutes(b.startTime), bEnd = timeToMinutes(b.endTime);
+    const next = [];
+    for (const [s, e] of ranges) {
+      if (bEnd <= s || bStart >= e) { next.push([s, e]); continue; }
+      if (bStart > s) next.push([s, bStart]);
+      if (bEnd < e) next.push([bEnd, e]);
+    }
+    ranges = next;
+  }
+
+  return ranges.sort((a,b) => a[0]-b[0]);
+}
+
+function slotsFromRanges(ranges, durationMin) {
+  const slots = [];
+  for (const [s, e] of ranges) {
+    for (let t = s; t + durationMin <= e; t += 30) {
+      slots.push(minutesToTime(t));
+    }
+  }
+  return slots;
+}
+
+async function isSlotStillFree(ownerId, dk, weekday, startTime, durationMin) {
+  const ranges = await getAvailableRangesForDate(ownerId, dk, weekday);
+  const start = timeToMinutes(startTime), end = start + durationMin;
+  return ranges.some(([s, e]) => start >= s && end <= e);
+}
+
+// ============================================================
+// AUTH STATE
+// ============================================================
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  authReady = true;
+  if (user) {
+    const snap = await getDoc(doc(db, "users", user.uid));
+    currentProfile = snap.exists() ? snap.data() : null;
+  } else {
+    currentProfile = null;
+  }
+  route();
+});
+
+async function handleGoogleSignIn(onDone) {
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    console.error(err);
+    toast(humanizeAuthError(err), "error");
+  } finally {
+    if (onDone) onDone();
+  }
+}
+
+function humanizeAuthError(err) {
+  const code = err && err.code || "";
+  if (code.includes("popup-closed")) return "Sign-in was cancelled.";
+  if (code.includes("network")) return "Network error. Check your connection and try again.";
+  return "Sign-in failed. Please try again.";
+}
+
+// ============================================================
+// ROUTER
+// ============================================================
+async function route() {
+  if (!authReady) { appEl.innerHTML = `<div class="loading-screen">Loading…</div>`; return; }
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/") {
+    if (currentUser && currentProfile) return renderDashboard();
+    if (currentUser && !currentProfile) return renderOnboarding();
+    return renderLanding();
+  }
+  if (path === "/login") return renderLogin();
+  if (path === "/dashboard") {
+    if (!currentUser) return navigate("/login");
+    if (!currentProfile) return renderOnboarding();
+    return renderDashboard();
+  }
+  if (path === "/requests") {
+    if (!currentUser) return navigate("/login");
+    if (!currentProfile) return renderOnboarding();
+    return renderRequests();
+  }
+  if (path === "/availability") {
+    if (!currentUser) return navigate("/login");
+    if (!currentProfile) return renderOnboarding();
+    return renderAvailabilityPage();
+  }
+  if (path === "/profile") {
+    if (!currentUser) return navigate("/login");
+    if (!currentProfile) return renderOnboarding();
+    return renderProfilePage();
+  }
+
+  // Fallback: treat as /username public profile
+  const username = path.slice(1);
+  if (/^[a-z0-9._-]{3,20}$/i.test(username)) {
+    return renderPublicProfile(username.toLowerCase());
+  }
+  renderNotFound();
+}
+
+// ============================================================
+// SHELL: layout wrapper for logged-in app pages
+// ============================================================
+function appShell(activePage, innerHtml) {
+  const links = [
+    { key: "dashboard", href: "/dashboard", label: "Dashboard" },
+    { key: "requests", href: "/requests", label: "Requests" },
+    { key: "availability", href: "/availability", label: "Availability" },
+    { key: "profile", href: "/profile", label: "Profile" },
+  ];
+  const photo = currentProfile.photoURL || "";
+  appEl.innerHTML = `
+    <div class="app-shell" id="app-shell">
+      <div class="sidebar">
+        <div class="logo">Meetly</div>
+        ${links.map(l => `<a class="side-link ${l.key===activePage?'active':''}" data-nav="${l.href}">${l.label}</a>`).join("")}
+        <div class="side-spacer"></div>
+        <div class="side-user">
+          ${photo ? `<img src="${esc(photo)}" alt="">` : ""}
+          <div class="who">
+            <div class="n">${esc(currentProfile.displayName)}</div>
+            <div class="u">@${esc(currentProfile.username)}</div>
+          </div>
+          <button id="signout-btn">Sign out</button>
+        </div>
+      </div>
+      <div class="main">
+        <div class="topbar">
+          <div class="logo">Meetly</div>
+          <button class="icon-btn" id="mobile-menu-btn" style="font-size:20px;color:var(--text);">☰</button>
+        </div>
+        <div class="main-content">${innerHtml}</div>
+      </div>
+    </div>
+  `;
+  appEl.querySelectorAll("[data-nav]").forEach(a => a.addEventListener("click", (e) => {
+    e.preventDefault(); navigate(a.dataset.nav);
+  }));
+  document.getElementById("signout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    navigate("/");
+  });
+  const menuBtn = document.getElementById("mobile-menu-btn");
+  if (menuBtn) menuBtn.addEventListener("click", () => {
+    document.getElementById("app-shell").classList.toggle("mobile-drawer-open");
+  });
+}
+
+// ============================================================
+// LANDING PAGE
+// ============================================================
+function renderLanding() {
+  appEl.innerHTML = `
+    <div class="container">
+      <div class="nav">
+        <div class="logo">Meetly</div>
+        <a class="btn btn-primary btn-sm" data-nav="/login">Sign in</a>
+      </div>
+      <div class="hero">
+        <h1>Your time. Your link. Your choice.</h1>
+        <p>Share your availability once. Let people request a time that actually works — no back-and-forth, no guesswork.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" data-nav="/login">Create your Meetly</a>
+          <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
+        </div>
+      </div>
+      <div class="section" id="how-it-works">
+        <div class="section-label">How it works</div>
+        <h2>Three steps, no calendar tennis</h2>
+        <div class="steps">
+          <div class="step"><h3>Create your profile</h3><p>Sign in and choose a username. That's your Meetly link.</p></div>
+          <div class="step"><h3>Share your link</h3><p>Send it in a message, an email signature, or your bio.</p></div>
+          <div class="step"><h3>Accept what works</h3><p>Review requests and confirm the times that fit your day.</p></div>
+        </div>
+      </div>
+      <div class="section" style="border-bottom:none;">
+        <div class="section-label">Why it works</div>
+        <h2>Built around real availability</h2>
+        <div class="features">
+          <div class="feature"><h3>Real conflict checking</h3><p>Every request is checked against your schedule and existing bookings before it's confirmed.</p></div>
+          <div class="feature"><h3>Flexible hours</h3><p>Set different hours per day, add breaks, or block off specific dates.</p></div>
+          <div class="feature"><h3>One link</h3><p>A single public URL is all anyone needs to request time with you.</p></div>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Meetly</span>
+        <span>Your time. Your link. Your choice.</span>
+      </div>
+    </div>
+  `;
+  appEl.querySelectorAll("[data-nav]").forEach(a => a.addEventListener("click", (e) => {
+    e.preventDefault(); navigate(a.dataset.nav);
+  }));
+}
+
+// ============================================================
+// LOGIN PAGE
+// ============================================================
+function renderLogin() {
+  if (currentUser) { navigate("/"); return; }
+  appEl.innerHTML = `
+    <div class="center-screen">
+      <div class="login-card">
+        <div class="logo">Meetly</div>
+        <h1>Make time for what matters.</h1>
+        <p>Share your availability and let people request a time that works for both of you.</p>
+        <button class="google-btn" id="google-signin-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.91c1.7-1.57 2.69-3.88 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.17l-2.91-2.27c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.7H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.72c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72V4.94H.96A8.99 8.99 0 000 9c0 1.45.35 2.83.96 4.06l3-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.94l3 2.34C4.67 5.16 6.66 3.58 9 3.58z"/></svg>
+          <span id="google-signin-label">Continue with Google</span>
+        </button>
+      </div>
+    </div>
+  `;
+  document.getElementById("google-signin-btn").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    document.getElementById("google-signin-label").textContent = "Signing in…";
+    handleGoogleSignIn(() => { btn.disabled = false; });
+  });
+}
+
+// ============================================================
+// ONBOARDING (first-time profile creation)
+// ============================================================
+function renderOnboarding() {
+  appEl.innerHTML = `
+    <div class="center-screen">
+      <div class="onboard-card">
+        <h1>Set up your Meetly</h1>
+        <p>This is what people will see when they visit your link.</p>
+        <div class="field">
+          <label for="ob-name">Full name</label>
+          <input id="ob-name" type="text" value="${esc(currentUser.displayName || "")}" maxlength="60" />
+        </div>
+        <div class="field">
+          <label for="ob-username">Username</label>
+          <div class="url-prefix-input">
+            <span>meetly.app/</span>
+            <input id="ob-username" type="text" placeholder="yourname" maxlength="20" />
+          </div>
+          <div class="field-hint">3–20 characters. Lowercase letters, numbers, . _ - only.</div>
+          <div class="field-error" id="ob-error" style="display:none;"></div>
+        </div>
+        <button class="btn btn-primary btn-block" id="ob-submit">Create profile</button>
+      </div>
+    </div>
+  `;
+  const btn = document.getElementById("ob-submit");
+  btn.addEventListener("click", async () => {
+    const displayName = document.getElementById("ob-name").value.trim();
+    const usernameRaw = document.getElementById("ob-username").value.trim().toLowerCase();
+    const errorEl = document.getElementById("ob-error");
+    errorEl.style.display = "none";
+
+    if (!displayName) { errorEl.textContent = "Please enter your name."; errorEl.style.display = "block"; return; }
+    const vErr = validateUsername(usernameRaw);
+    if (vErr) { errorEl.textContent = vErr; errorEl.style.display = "block"; return; }
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Creating…`;
+    try {
+      const taken = await isUsernameTaken(usernameRaw, currentUser.uid);
+      if (taken) {
+        errorEl.textContent = "That username is already taken.";
+        errorEl.style.display = "block";
+        btn.disabled = false; btn.textContent = "Create profile";
+        return;
+      }
+      const profileData = {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName,
+        username: usernameRaw,
+        photoURL: currentUser.photoURL || "",
+        bio: "Available for meetings and conversations.",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        emailNotifications: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(doc(db, "users", currentUser.uid), profileData);
+      currentProfile = profileData;
+      toast("Profile created.", "success");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      errorEl.textContent = "Something went wrong. Please try again.";
+      errorEl.style.display = "block";
+      btn.disabled = false; btn.textContent = "Create profile";
+    }
+  });
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function renderDashboard() {
+  appShell("dashboard", `
+    <div class="page-header">
+      <h1>Good ${greetingWord()}, ${esc(currentProfile.displayName.split(" ")[0])}.</h1>
+      <p>Here's what's happening with your Meetly.</p>
+    </div>
+    <div class="cards-row" id="stat-cards">
+      <div class="stat-card"><div class="label">Pending requests</div><div class="value skel" style="height:26px;">&nbsp;</div></div>
+      <div class="stat-card"><div class="label">Upcoming meetings</div><div class="value skel" style="height:26px;">&nbsp;</div></div>
+      <div class="stat-card"><div class="label">Available today</div><div class="value skel" style="height:26px;">&nbsp;</div></div>
+      <div class="stat-card link-card"><div class="label">Your Meetly link</div><div class="value">${esc(window.location.origin)}/${esc(currentProfile.username)}</div></div>
+    </div>
+    <div class="panel">
+      <h2>Upcoming meetings</h2>
+      <div id="upcoming-list"><div class="empty-state">Loading…</div></div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;">Your Meetly link</h2>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" id="copy-link-btn">Copy link</button>
+        <a class="btn btn-ghost btn-sm" href="/${esc(currentProfile.username)}" target="_blank" rel="noopener">Open link</a>
+      </div>
+    </div>
+  `);
+
+  document.getElementById("copy-link-btn").addEventListener("click", async () => {
+    const url = `${window.location.origin}/${currentProfile.username}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied.", "success");
+    } catch {
+      toast("Couldn't copy link.", "error");
+    }
+  });
+
+  // Load real data
+  try {
+    const [pendingSnap, bookingsSnap] = await Promise.all([
+      getDocs(query(collection(db, "bookingRequests"), where("ownerId", "==", currentUser.uid), where("status", "==", "pending"))),
+      getDocs(query(collection(db, "bookings"), where("ownerId", "==", currentUser.uid), where("status", "==", "confirmed")))
+    ]);
+
+    const todayKey = dateKey(new Date());
+    const upcoming = bookingsSnap.docs
+      .map(d => d.data())
+      .filter(b => b.date >= todayKey)
+      .sort((a,b) => (a.date+a.startTime).localeCompare(b.date+b.startTime));
+
+    const availableToday = await getAvailableRangesForDate(currentUser.uid, todayKey, new Date().getDay());
+    const availableTodayMinutes = availableToday.reduce((sum, [s,e]) => sum + (e-s), 0);
+
+    const cardsEl = document.getElementById("stat-cards");
+    cardsEl.children[0].querySelector(".value").outerHTML = `<div class="value">${pendingSnap.size}</div>`;
+    cardsEl.children[1].querySelector(".value").outerHTML = `<div class="value">${upcoming.length}</div>`;
+    cardsEl.children[2].querySelector(".value").outerHTML = `<div class="value">${availableTodayMinutes > 0 ? (availableTodayMinutes/60).toFixed(1) + "h" : "0h"}</div>`;
+
+    const listEl = document.getElementById("upcoming-list");
+    if (upcoming.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><strong>No upcoming meetings</strong>Confirmed meetings will appear here.</div>`;
+    } else {
+      listEl.innerHTML = upcoming.slice(0, 8).map(b => `
+        <div class="meeting-row">
+          <div class="m-when">${esc(formatDateLabel(b.date))}<br>${esc(formatTimeLabel(b.startTime))}–${esc(formatTimeLabel(b.endTime))}</div>
+          <div class="m-info">
+            <div class="m-who">${esc(b.requesterName)}</div>
+            <div class="m-reason">${esc(b.reason || "")}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't load dashboard data.", "error");
+  }
+}
+
+function greetingWord() {
+  const h = new Date().getHours();
+  if (h < 12) return "morning";
+  if (h < 18) return "afternoon";
+  return "evening";
+}
+
+// ============================================================
+// REQUESTS PAGE
+// ============================================================
+let requestsTab = "pending";
+async function renderRequests() {
+  appShell("requests", `
+    <div class="page-header">
+      <h1>Requests</h1>
+      <p>Review and respond to meeting requests.</p>
+    </div>
+    <div class="tabs" id="req-tabs">
+      ${["pending","accepted","declined","all"].map(t => `<div class="tab ${t===requestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
+    </div>
+    <div class="panel" id="req-list"><div class="empty-state">Loading…</div></div>
+  `);
+
+  document.querySelectorAll("#req-tabs .tab").forEach(t => t.addEventListener("click", () => {
+    requestsTab = t.dataset.tab;
+    renderRequests();
+  }));
+
+  try {
+    let q;
+    if (requestsTab === "all") {
+      q = query(collection(db, "bookingRequests"), where("ownerId", "==", currentUser.uid));
+    } else {
+      q = query(collection(db, "bookingRequests"), where("ownerId", "==", currentUser.uid), where("status", "==", requestsTab));
+    }
+    const snap = await getDocs(q);
+    const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+
+    const listEl = document.getElementById("req-list");
+    if (items.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><strong>No ${requestsTab === 'all' ? '' : requestsTab} requests</strong>New meeting requests will appear here.</div>`;
+      return;
+    }
+    listEl.innerHTML = items.map(r => `
+      <div class="request-card" data-id="${r.id}">
+        <div class="request-top">
+          <span class="r-name">${esc(r.requesterName)}</span>
+          <span class="r-username">@${esc(r.requesterUsername || "")}</span>
+          <span class="status-pill ${r.status}">${esc(r.status)}</span>
+        </div>
+        <div class="request-meta">${esc(formatDateLabel(r.date))} · ${esc(formatTimeLabel(r.startTime))}–${esc(formatTimeLabel(r.endTime))} · ${esc(r.duration)} min · ${esc(r.reason || "—")}</div>
+        ${r.note ? `<div class="request-note">${esc(r.note)}</div>` : ""}
+        ${r.status === "pending" ? `
+          <div class="request-actions">
+            <button class="btn btn-primary btn-sm" data-action="accept" data-id="${r.id}">Accept</button>
+            <button class="btn btn-danger btn-sm" data-action="decline" data-id="${r.id}">Decline</button>
+          </div>
+        ` : ""}
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll('[data-action="accept"]').forEach(b => b.addEventListener("click", () => acceptRequest(b, items.find(i=>i.id===b.dataset.id))));
+    listEl.querySelectorAll('[data-action="decline"]').forEach(b => b.addEventListener("click", () => openDeclineModal(items.find(i=>i.id===b.dataset.id))));
+  } catch (err) {
+    console.error(err);
+    document.getElementById("req-list").innerHTML = `<div class="empty-state">Couldn't load requests.</div>`;
+  }
+}
+
+async function acceptRequest(btn, req) {
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>`;
+  try {
+    const weekday = new Date(req.date + "T00:00:00").getDay();
+    const free = await isSlotStillFree(currentUser.uid, req.date, weekday, req.startTime, req.duration);
+    if (!free) {
+      toast("This time is no longer available.", "error");
+      await updateDoc(doc(db, "bookingRequests", req.id), { status: "declined", ownerResponse: "This time is no longer available.", updatedAt: serverTimestamp() });
+      renderRequests();
+      return;
+    }
+    await addDoc(collection(db, "bookings"), {
+      ownerId: currentUser.uid,
+      requesterId: req.requesterId,
+      requestId: req.id,
+      ownerName: currentProfile.displayName,
+      requesterName: req.requesterName,
+      ownerEmail: currentProfile.email,
+      date: req.date,
+      startTime: req.startTime,
+      endTime: req.endTime,
+      duration: req.duration,
+      reason: req.reason,
+      note: req.note,
+      status: "confirmed",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, "bookingRequests", req.id), { status: "accepted", updatedAt: serverTimestamp() });
+    await addDoc(collection(db, "notifications"), {
+      userId: req.requesterId,
+      type: "accepted",
+      title: "Meeting confirmed",
+      message: `Your meeting with ${currentProfile.displayName} has been confirmed.`,
+      read: false,
+      relatedRequestId: req.id,
+      createdAt: serverTimestamp()
+    });
+    toast("Meeting confirmed.", "success");
+    renderRequests();
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't accept this request.", "error");
+    btn.disabled = false;
+    btn.textContent = "Accept";
+  }
+}
+
+function openDeclineModal(req) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Decline request</h3>
+      <p>Let ${esc(req.requesterName)} know why, if you'd like.</p>
+      <div class="field">
+        <textarea id="decline-reason" rows="3" placeholder="I'm unavailable at this time."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" id="decline-cancel">Cancel</button>
+        <button class="btn btn-danger btn-sm" id="decline-confirm">Decline request</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector("#decline-cancel").addEventListener("click", () => overlay.remove());
+  overlay.querySelector("#decline-confirm").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>`;
+    const reasonText = document.getElementById("decline-reason").value.trim();
+    try {
+      await updateDoc(doc(db, "bookingRequests", req.id), { status: "declined", ownerResponse: reasonText, updatedAt: serverTimestamp() });
+      await addDoc(collection(db, "notifications"), {
+        userId: req.requesterId,
+        type: "declined",
+        title: "Request declined",
+        message: `Your request with ${currentProfile.displayName} was declined.${reasonText ? " " + reasonText : ""}`,
+        read: false,
+        relatedRequestId: req.id,
+        createdAt: serverTimestamp()
+      });
+      overlay.remove();
+      toast("Request declined.", "info");
+      renderRequests();
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't decline this request.", "error");
+      btn.disabled = false;
+      btn.textContent = "Decline request";
+    }
+  });
+}
+
+// ============================================================
+// AVAILABILITY PAGE
+// ============================================================
+async function renderAvailabilityPage() {
+  appShell("availability", `
+    <div class="page-header">
+      <h1>Availability</h1>
+      <p>Set the hours people can request time with you.</p>
+    </div>
+    <div class="panel" id="avail-panel"><div class="empty-state">Loading…</div></div>
+    <button class="btn btn-primary" id="save-avail-btn">Save availability</button>
+  `);
+
+  const existing = await loadAvailability(currentUser.uid);
+  const byDay = {};
+  DAY_KEYS.forEach((k, i) => { byDay[i] = existing.filter(a => a.dayOfWeek === i).map(a => ({ startTime: a.startTime, endTime: a.endTime })); });
+
+  const panel = document.getElementById("avail-panel");
+  panel.innerHTML = DAY_NAMES.map((name, i) => {
+    const ranges = byDay[i].length ? byDay[i] : [];
+    const enabled = ranges.length > 0;
+    return `
+      <div class="day-row" data-day="${i}">
+        <div class="day-name">${name}</div>
+        <div class="day-ranges" data-ranges-for="${i}">
+          ${enabled ? ranges.map((r, idx) => rangeLineHtml(i, idx, r.startTime, r.endTime)).join("") : ""}
+        </div>
+        <label class="toggle">
+          <input type="checkbox" data-day-toggle="${i}" ${enabled ? "checked" : ""}>
+          <span class="slider"></span>
+        </label>
+      </div>
+    `;
+  }).join("");
+
+  function rangeLineHtml(day, idx, start, end) {
+    return `
+      <div class="range-line" data-range-line>
+        <input type="time" value="${start || '09:00'}" data-start>
+        <span style="color:var(--text-faint);">to</span>
+        <input type="time" value="${end || '17:00'}" data-end>
+        <button class="icon-btn" data-remove-range title="Remove">✕</button>
+      </div>
+    `;
+  }
+
+  function attachRangeRemovers(container) {
+    container.querySelectorAll("[data-remove-range]").forEach(btn => {
+      btn.onclick = () => btn.closest("[data-range-line]").remove();
+    });
+  }
+
+  function rangeLinesOf(container) {
+    return container.querySelectorAll("[data-range-line]");
+  }
+
+  function clearRangeLines(container) {
+    rangeLinesOf(container).forEach(el => el.remove());
+  }
+
+  panel.querySelectorAll("[data-ranges-for]").forEach(attachRangeRemovers);
+
+  panel.querySelectorAll("[data-day-toggle]").forEach(cb => {
+    cb.addEventListener("change", () => {
+      const day = cb.dataset.dayToggle;
+      const container = panel.querySelector(`[data-ranges-for="${day}"]`);
+      const addBtn = container.querySelector("[data-add-range]");
+      if (cb.checked && rangeLinesOf(container).length === 0) {
+        addBtn.insertAdjacentHTML("beforebegin", rangeLineHtml(day, 0, "09:00", "17:00"));
+        attachRangeRemovers(container);
+      } else if (!cb.checked) {
+        clearRangeLines(container);
+      }
+    });
+  });
+
+  // Add "add range" button per day, inserted once into each ranges container.
+  panel.querySelectorAll(".day-row").forEach(row => {
+    const day = row.dataset.day;
+    const rangesContainer = row.querySelector(`[data-ranges-for="${day}"]`);
+    const addBtn = document.createElement("button");
+    addBtn.className = "btn btn-ghost btn-sm";
+    addBtn.style.marginTop = "4px";
+    addBtn.style.alignSelf = "flex-start";
+    addBtn.textContent = "+ Add range";
+    addBtn.setAttribute("data-add-range", "");
+    addBtn.addEventListener("click", () => {
+      addBtn.insertAdjacentHTML("beforebegin", rangeLineHtml(day, rangeLinesOf(rangesContainer).length, "15:00", "19:00"));
+      attachRangeRemovers(rangesContainer);
+    });
+    rangesContainer.appendChild(addBtn);
+  });
+
+  document.getElementById("save-avail-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Saving…`;
+    try {
+      // Delete existing availability docs for this user, then re-create.
+      const existingDocs = await getDocs(query(collection(db, "availability"), where("ownerId", "==", currentUser.uid)));
+      // Firestore has no bulk delete client-side without extra imports; use updateDoc pattern via delete of each doc.
+      const { deleteDoc } = await importDeleteDoc();
+      await Promise.all(existingDocs.docs.map(d => deleteDoc(d.ref)));
+
+      const writes = [];
+      panel.querySelectorAll(".day-row").forEach(row => {
+        const day = Number(row.dataset.day);
+        const toggle = row.querySelector("[data-day-toggle]");
+        if (!toggle.checked) return;
+        row.querySelectorAll("[data-range-line]").forEach(line => {
+          const start = line.querySelector("[data-start]").value;
+          const end = line.querySelector("[data-end]").value;
+          if (start && end && start < end) {
+            writes.push(addDoc(collection(db, "availability"), {
+              ownerId: currentUser.uid,
+              dayOfWeek: day,
+              startTime: start,
+              endTime: end,
+              type: "regular",
+              createdAt: serverTimestamp()
+            }));
+          }
+        });
+      });
+      await Promise.all(writes);
+      toast("Availability saved.", "success");
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't save availability.", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save availability";
+    }
+  });
+}
+
+async function importDeleteDoc() {
+  return await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+}
+
+// ============================================================
+// PROFILE PAGE
+// ============================================================
+async function renderProfilePage() {
+  appShell("profile", `
+    <div class="page-header">
+      <h1>Profile</h1>
+      <p>This is what people see on your public Meetly page.</p>
+    </div>
+    <div class="panel" style="max-width:480px;">
+      <div class="field">
+        <label>Full name</label>
+        <input id="pf-name" type="text" value="${esc(currentProfile.displayName)}" maxlength="60">
+      </div>
+      <div class="field">
+        <label>Username</label>
+        <div class="url-prefix-input"><span>meetly.app/</span><input id="pf-username" type="text" value="${esc(currentProfile.username)}" maxlength="20"></div>
+        <div class="field-error" id="pf-error" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label>Bio</label>
+        <textarea id="pf-bio" rows="3" maxlength="160">${esc(currentProfile.bio || "")}</textarea>
+      </div>
+      <div class="field">
+        <label>Timezone</label>
+        <input id="pf-tz" type="text" value="${esc(currentProfile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)}">
+      </div>
+      <button class="btn btn-primary" id="pf-save">Save changes</button>
+    </div>
+  `);
+
+  document.getElementById("pf-save").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const name = document.getElementById("pf-name").value.trim();
+    const usernameRaw = document.getElementById("pf-username").value.trim().toLowerCase();
+    const bio = document.getElementById("pf-bio").value.trim();
+    const tz = document.getElementById("pf-tz").value.trim();
+    const errorEl = document.getElementById("pf-error");
+    errorEl.style.display = "none";
+
+    const vErr = validateUsername(usernameRaw);
+    if (vErr) { errorEl.textContent = vErr; errorEl.style.display = "block"; return; }
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Saving…`;
+    try {
+      if (usernameRaw !== currentProfile.username) {
+        const taken = await isUsernameTaken(usernameRaw, currentUser.uid);
+        if (taken) {
+          errorEl.textContent = "That username is already taken.";
+          errorEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Save changes";
+          return;
+        }
+      }
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        displayName: name, username: usernameRaw, bio, timezone: tz, updatedAt: serverTimestamp()
+      });
+      currentProfile = { ...currentProfile, displayName: name, username: usernameRaw, bio, timezone: tz };
+      toast("Profile updated.", "success");
+      btn.textContent = "Save changes";
+      btn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't save profile.", "error");
+      btn.disabled = false;
+      btn.textContent = "Save changes";
+    }
+  });
+}
+
+// ============================================================
+// PUBLIC PROFILE + BOOKING FLOW
+// ============================================================
+async function renderPublicProfile(username) {
+  appEl.innerHTML = `<div class="loading-screen">Loading…</div>`;
+  const owner = await getUserByUsername(username);
+  if (!owner) return renderNotFound();
+
+  const state = {
+    owner,
+    step: 1,
+    selectedDate: null,
+    selectedTime: null,
+    duration: 30,
+    reason: null,
+    customReason: "",
+    note: "",
+    calendarMonth: new Date().getMonth(),
+    calendarYear: new Date().getFullYear(),
+    slotsCache: {}
+  };
+
+  renderPublicShell(state);
+}
+
+function renderPublicShell(state) {
+  const { owner } = state;
+  appEl.innerHTML = `
+    <div class="public-wrap">
+      <div class="public-header">
+        ${owner.photoURL ? `<img src="${esc(owner.photoURL)}" alt="">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--panel-2);"></div>`}
+        <div>
+          <h1>${esc(owner.displayName)}</h1>
+          <div class="u">@${esc(owner.username)}</div>
+        </div>
+      </div>
+      <div class="public-bio">${esc(owner.bio || "Available for meetings and conversations.")}</div>
+      <div class="booking-steps-nav">
+        ${[1,2,3,4,5].map(n => `<div class="dot ${state.step >= n ? 'done' : ''}"></div>`).join("")}
+      </div>
+      <div id="booking-step-content"></div>
+    </div>
+  `;
+  renderBookingStep(state);
+}
+
+async function renderBookingStep(state) {
+  const content = document.getElementById("booking-step-content");
+  if (state.step === 1) return renderStepDate(state, content);
+  if (state.step === 2) return renderStepTime(state, content);
+  if (state.step === 3) return renderStepDuration(state, content);
+  if (state.step === 4) return renderStepReason(state, content);
+  if (state.step === 5) return renderStepReview(state, content);
+}
+
+function renderStepDate(state, content) {
+  const year = state.calendarYear, month = state.calendarMonth;
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let cells = "";
+  for (let i = 0; i < startWeekday; i++) cells += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cellDate = new Date(year, month, d);
+    const dk = dateKey(cellDate);
+    const isPast = cellDate < today;
+    const isSelected = state.selectedDate === dk;
+    cells += `<div class="cal-day ${isPast ? 'disabled' : 'selectable'} ${isSelected ? 'selected' : ''}" data-date="${isPast ? '' : dk}">${d}</div>`;
+  }
+
+  content.innerHTML = `
+    <div class="panel">
+      <h2>Choose a date</h2>
+      <div class="cal-nav">
+        <button data-cal-prev>‹</button>
+        <div class="month-label">${firstDay.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+        <button data-cal-next>›</button>
+      </div>
+      <div class="calendar-grid">
+        ${["S","M","T","W","T","F","S"].map(d => `<div class="cal-weekday">${d}</div>`).join("")}
+        ${cells}
+      </div>
+    </div>
+  `;
+  content.querySelector("[data-cal-prev]").addEventListener("click", () => {
+    state.calendarMonth--; if (state.calendarMonth < 0) { state.calendarMonth = 11; state.calendarYear--; }
+    renderBookingStep(state);
+  });
+  content.querySelector("[data-cal-next]").addEventListener("click", () => {
+    state.calendarMonth++; if (state.calendarMonth > 11) { state.calendarMonth = 0; state.calendarYear++; }
+    renderBookingStep(state);
+  });
+  content.querySelectorAll(".cal-day.selectable").forEach(cell => {
+    cell.addEventListener("click", () => {
+      state.selectedDate = cell.dataset.date;
+      state.step = 2;
+      renderPublicShell(state);
+    });
+  });
+}
+
+async function renderStepTime(state, content) {
+  content.innerHTML = `<div class="panel"><h2>Choose a time</h2><div class="empty-state">Loading available times…</div></div>`;
+  const weekday = new Date(state.selectedDate + "T00:00:00").getDay();
+  const ranges = await getAvailableRangesForDate(state.owner.uid, state.selectedDate, weekday);
+  const slots = slotsFromRanges(ranges, state.duration || 30);
+
+  content.innerHTML = `
+    <div class="panel">
+      <h2>Choose a time — ${esc(formatDateLabel(state.selectedDate))}</h2>
+      ${slots.length === 0
+        ? `<div class="empty-state"><strong>No available times</strong>Try a different date.</div>`
+        : `<div class="slot-grid">${slots.map(t => `<div class="slot-btn ${state.selectedTime===t?'selected':''}" data-time="${t}">${esc(formatTimeLabel(t))}</div>`).join("")}</div>`
+      }
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-ghost" data-back>Back</button>
+    </div>
+  `;
+  content.querySelectorAll(".slot-btn").forEach(el => el.addEventListener("click", () => {
+    state.selectedTime = el.dataset.time;
+    state.step = 3;
+    renderPublicShell(state);
+  }));
+  content.querySelector("[data-back]").addEventListener("click", () => { state.step = 1; renderPublicShell(state); });
+}
+
+function renderStepDuration(state, content) {
+  const options = [15, 30, 45, 60, 90];
+  content.innerHTML = `
+    <div class="panel">
+      <h2>How long?</h2>
+      <div class="duration-grid">
+        ${options.map(m => `<div class="duration-btn ${state.duration===m?'selected':''}" data-dur="${m}">${m} min</div>`).join("")}
+      </div>
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-ghost" data-back>Back</button>
+      <button class="btn btn-primary" data-next>Continue</button>
+    </div>
+  `;
+  content.querySelectorAll(".duration-btn").forEach(el => el.addEventListener("click", () => {
+    content.querySelectorAll(".duration-btn").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
+    state.duration = Number(el.dataset.dur);
+  }));
+  content.querySelector("[data-back]").addEventListener("click", () => { state.step = 2; renderPublicShell(state); });
+  content.querySelector("[data-next]").addEventListener("click", () => { state.step = 4; renderPublicShell(state); });
+}
+
+function renderStepReason(state, content) {
+  const reasons = ["Project discussion", "Interview", "Meetup", "Need advice", "Just want to talk", "Other"];
+  content.innerHTML = `
+    <div class="panel">
+      <h2>What's this about?</h2>
+      <div class="reason-grid">
+        ${reasons.map(r => `<div class="reason-chip ${state.reason===r?'selected':''}" data-reason="${esc(r)}">${esc(r)}</div>`).join("")}
+      </div>
+      <div class="field" style="margin-top:16px;" id="custom-reason-field" style="display:none;">
+        <label>Custom reason</label>
+        <input id="custom-reason-input" type="text" maxlength="80" value="${esc(state.customReason)}">
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label>Note (optional)</label>
+        <textarea id="note-input" rows="2" maxlength="240" placeholder="Add any context.">${esc(state.note)}</textarea>
+      </div>
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-ghost" data-back>Back</button>
+      <button class="btn btn-primary" data-next>Continue</button>
+    </div>
+  `;
+  const customField = content.querySelector("#custom-reason-field");
+  customField.style.display = state.reason === "Other" ? "block" : "none";
+
+  content.querySelectorAll(".reason-chip").forEach(el => el.addEventListener("click", () => {
+    content.querySelectorAll(".reason-chip").forEach(b => b.classList.remove("selected"));
+    el.classList.add("selected");
+    state.reason = el.dataset.reason;
+    customField.style.display = state.reason === "Other" ? "block" : "none";
+  }));
+  content.querySelector("[data-back]").addEventListener("click", () => { state.step = 3; renderPublicShell(state); });
+  content.querySelector("[data-next]").addEventListener("click", () => {
+    state.customReason = document.getElementById("custom-reason-input") ? document.getElementById("custom-reason-input").value.trim() : "";
+    state.note = document.getElementById("note-input").value.trim();
+    if (!state.reason) { toast("Please select a reason.", "warning"); return; }
+    state.step = 5;
+    renderPublicShell(state);
+  });
+}
+
+function renderStepReview(state, content) {
+  const finalReason = state.reason === "Other" ? (state.customReason || "Other") : state.reason;
+  content.innerHTML = `
+    <div class="panel">
+      <h2>Review and confirm</h2>
+      <div class="booking-summary">
+        <div><strong>${esc(formatDateLabel(state.selectedDate))}</strong></div>
+        <div>${esc(formatTimeLabel(state.selectedTime))} · ${esc(state.duration)} minutes</div>
+        <div>${esc(finalReason)}</div>
+        ${state.note ? `<div style="margin-top:8px;">"${esc(state.note)}"</div>` : ""}
+      </div>
+      ${currentUser ? "" : `<p style="margin-top:16px;font-size:13px;color:var(--text-dim);">Sign in with Google to continue.</p>`}
+    </div>
+    <div class="step-actions">
+      <button class="btn btn-ghost" data-back>Back</button>
+      <button class="btn btn-primary" id="submit-request-btn">
+        ${currentUser ? "Send request" : "Sign in with Google to continue"}
+      </button>
+    </div>
+  `;
+  content.querySelector("[data-back]").addEventListener("click", () => { state.step = 4; renderPublicShell(state); });
+
+  document.getElementById("submit-request-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    if (!currentUser) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner"></span> Signing in…`;
+      await handleGoogleSignIn(() => {});
+      // After sign-in, if the requester doesn't have a Meetly profile yet, still let them submit
+      // using their Google displayName/email — a full profile isn't required to request a meeting.
+      renderBookingStep(state);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Sending…`;
+    try {
+      const weekday = new Date(state.selectedDate + "T00:00:00").getDay();
+      const stillFree = await isSlotStillFree(state.owner.uid, state.selectedDate, weekday, state.selectedTime, state.duration);
+      if (!stillFree) {
+        toast("This time is no longer available.", "error");
+        state.step = 2;
+        renderPublicShell(state);
+        return;
+      }
+
+      const endMinutes = timeToMinutes(state.selectedTime) + state.duration;
+      const endTime = minutesToTime(endMinutes);
+      const requesterUsername = currentProfile ? currentProfile.username : (currentUser.email || "").split("@")[0];
+
+      await addDoc(collection(db, "bookingRequests"), {
+        requesterId: currentUser.uid,
+        ownerId: state.owner.uid,
+        requesterName: currentUser.displayName || "Guest",
+        requesterUsername,
+        requesterEmail: currentUser.email,
+        ownerUsername: state.owner.username,
+        date: state.selectedDate,
+        startTime: state.selectedTime,
+        endTime,
+        duration: state.duration,
+        reason: finalReason,
+        note: state.note || "",
+        status: "pending",
+        ownerResponse: "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      await addDoc(collection(db, "notifications"), {
+        userId: state.owner.uid,
+        type: "new_request",
+        title: "New meeting request",
+        message: `${currentUser.displayName || "Someone"} requested a meeting with you.`,
+        read: false,
+        relatedRequestId: "",
+        createdAt: serverTimestamp()
+      });
+
+      const emailResult = await sendNewRequestEmail({
+        ownerEmail: state.owner.email,
+        ownerName: state.owner.displayName,
+        requesterName: currentUser.displayName || "Guest",
+        requesterUsername,
+        date: state.selectedDate,
+        startTime: state.selectedTime,
+        endTime,
+        duration: state.duration,
+        reason: finalReason,
+        note: state.note
+      });
+
+      if (emailResult.ok) {
+        toast("Your request has been sent.", "success");
+      } else if (emailResult.skipped) {
+        toast("Your request has been sent.", "success");
+      } else {
+        toast("Your request was saved, but the email notification could not be sent.", "warning");
+      }
+
+      content.innerHTML = `
+        <div class="panel">
+          <div class="empty-state">
+            <strong>Request sent</strong>
+            ${esc(state.owner.displayName)} will review your request and confirm the meeting.
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't send your request. Please try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Send request";
+    }
+  });
+}
+
+function renderNotFound() {
+  appEl.innerHTML = `
+    <div class="center-screen">
+      <div style="text-align:center;">
+        <div class="logo" style="margin-bottom:16px;">Meetly</div>
+        <h1 style="font-family:var(--font-display);font-size:22px;margin:0 0 8px;">Page not found</h1>
+        <p style="color:var(--text-dim);font-size:14px;margin:0 0 24px;">This link doesn't match a Meetly profile.</p>
+        <a class="btn btn-primary" data-nav="/">Go home</a>
+      </div>
+    </div>
+  `;
+  appEl.querySelector("[data-nav]").addEventListener("click", (e) => { e.preventDefault(); navigate("/"); });
+}
+
+// Kick off
+route();
+
+} // initMeetly
+</script>
+
+<!--
+==========================================================================
+FIRESTORE SECURITY RULES
+Paste this into Firebase Console → Firestore Database → Rules.
+==========================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Users: anyone signed in can read public profile fields (needed to
+    // resolve usernames for booking); only the owner can write their doc.
+    match /users/{uid} {
+      allow read: if true; // public profile lookup by username
+      allow create: if isOwner(uid)
+                    && request.resource.data.uid == uid;
+      allow update: if isOwner(uid)
+                    && request.resource.data.uid == resource.data.uid; // cannot change uid
+      allow delete: if false;
+    }
+
+    // Availability: publicly readable (needed to compute booking slots),
+    // only the owner can write their own availability.
+    match /availability/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /availabilityExceptions/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Booking requests: requester can create for a valid owner; requester
+    // can read their own; owner can read/update requests addressed to them.
+    match /bookingRequests/{docId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.requesterId == request.auth.uid;
+      allow read: if isSignedIn()
+                  && (resource.data.requesterId == request.auth.uid
+                      || resource.data.ownerId == request.auth.uid);
+      allow update: if isSignedIn()
+                    && resource.data.ownerId == request.auth.uid; // only owner can accept/decline
+      allow delete: if false;
+    }
+
+    // Bookings: only participants can read; only the owner can create
+    // (accept flow) or update (cancel/reschedule) their bookings.
+    match /bookings/{docId} {
+      allow read: if isSignedIn()
+                  && (resource.data.ownerId == request.auth.uid
+                      || resource.data.requesterId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Notifications: only the owning user can read/update their own.
+    match /notifications/{docId} {
+      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn(); // created by either party's client during booking flow
+      allow delete: if false;
+    }
+  }
+}
+
+==========================================================================
+VERCEL SPA ROUTING (only needed if direct refreshes on /username 404)
+Create a file named vercel.json next to index.html:
+
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+==========================================================================
+-->
+</body>
+</html>
