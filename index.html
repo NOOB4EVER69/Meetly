@@ -72,31 +72,24 @@
 
 <style>
   :root {
-    --bg: #16140f;
-    --panel: #1e1b15;
-    --panel-2: #26221a;
-    --border: #35301f;
-    --border-soft: #2a271e;
-    --text: #f2ede2;
-    --text-dim: #a89f8c;
-    --text-faint: #6b6455;
-    --accent: #d19a4a;
-    --accent-hover: #dfa953;
-    --accent-dim: #6b4f28;
-    --accent-text: #16140f;
-    --danger: #d9705f;
-    --success: #6faa7e;
-    --radius-sm: 5px;
-    --radius: 10px;
-    --radius-lg: 16px;
+    --bg: #0e1013;
+    --panel: #16191d;
+    --panel-2: #1c2025;
+    --border: #262b31;
+    --text: #eceef0;
+    --text-dim: #9aa1ab;
+    --text-faint: #5f6670;
+    --accent: #5b8def;
+    --accent-dim: #3a5a9c;
+    --accent-text: #0e1013;
+    --danger: #e2645c;
+    --success: #4caf82;
+    --radius: 8px;
     --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-display: 'Source Serif 4', Georgia, serif;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * { box-sizing: border-box; }
   html, body { height: 100%; }
-  html { scroll-padding-top: var(--safe-top); }
   body {
     margin: 0;
     background: var(--bg);
@@ -105,13 +98,10 @@
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
   }
   a { color: inherit; text-decoration: none; }
   button { font-family: inherit; cursor: pointer; }
   input, select, textarea { font-family: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   #app { min-height: 100%; }
 
   .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
@@ -123,8 +113,8 @@
     font-size: 14px; font-weight: 600; transition: background .15s, border-color .15s;
     white-space: nowrap;
   }
-  .btn-primary { background: var(--accent); color: var(--accent-text); font-weight: 700; }
-  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4a7ede; }
   .btn-primary:disabled { background: var(--accent-dim); cursor: not-allowed; }
   .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
   .btn-ghost:hover { border-color: var(--text-faint); }
@@ -152,34 +142,24 @@
   .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
   .section { padding: 64px 0; border-bottom: 1px solid var(--border); }
-  .section h2 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 40px; max-width: 22ch; }
+  .section-label { font-size: 13px; color: var(--text-faint); margin-bottom: 8px; }
+  .section h2 { font-family: var(--font-display); font-weight: 500; font-size: 28px; margin: 0 0 40px; }
 
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-  .step { position: relative; padding-left: 28px; }
-  .step-num {
-    position: absolute; left: 0; top: 1px; font-family: var(--font-display); font-size: 15px;
-    color: var(--accent); font-weight: 600;
-  }
+  .step { border-left: 2px solid var(--border); padding-left: 20px; }
   .step h3 { font-size: 16px; margin: 0 0 8px; }
   .step p { color: var(--text-dim); font-size: 14px; margin: 0; }
 
-  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--border); }
-  .feature { padding: 22px 20px 22px 0; border-right: 1px solid var(--border); }
-  .feature:last-child { border-right: none; }
-  .feature h3 { font-size: 15px; margin: 0 0 8px; font-weight: 600; }
-  .feature p { color: var(--text-dim); font-size: 14px; margin: 0; line-height: 1.55; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .feature { padding: 24px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+  .feature h3 { font-size: 15px; margin: 0 0 8px; }
+  .feature p { color: var(--text-dim); font-size: 14px; margin: 0; }
 
   .footer { padding: 32px 0; color: var(--text-faint); font-size: 13px; display: flex; justify-content: space-between; }
 
   @media (max-width: 720px) {
     .steps, .features { grid-template-columns: 1fr; }
-    .hero { padding: 44px 0 40px; }
-    .hero p { font-size: 16px; }
-    .section { padding: 44px 0; }
-    .section h2 { font-size: 22px; margin-bottom: 28px; }
-    .feature { border-right: none; border-bottom: 1px solid var(--border); padding: 18px 0; }
-    .feature:last-child { border-bottom: none; }
-    .container { padding: 0 18px; }
+    .hero { padding: 56px 0 48px; }
   }
 
   /* ---------- Login ---------- */
@@ -260,12 +240,11 @@
   .page-header h1 { font-family: var(--font-display); font-weight: 500; font-size: 24px; margin: 0 0 4px; }
   .page-header p { color: var(--text-dim); font-size: 14px; margin: 0; }
 
-  .cards-row { display: grid; grid-template-columns: repeat(3, 1fr) 1.4fr; gap: 12px; margin-bottom: 32px; }
-  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
   .stat-card .label { font-size: 12px; color: var(--text-faint); margin-bottom: 6px; }
-  .stat-card .value { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
-  .stat-card.link-card { background: var(--panel-2); border-color: var(--accent-dim); }
-  .stat-card.link-card .value { font-family: var(--font-ui); font-size: 13px; font-weight: 500; word-break: break-all; color: var(--accent); }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .stat-card.link-card .value { font-size: 13px; font-weight: 500; word-break: break-all; color: var(--accent); }
 
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
   .panel h2 { font-size: 15px; margin: 0 0 16px; }
@@ -351,7 +330,7 @@
   .cal-day.selectable { color: var(--text); cursor: pointer; }
   .cal-day.selectable:hover { border-color: var(--accent); }
   .cal-day.disabled { color: var(--text-faint); opacity: .35; cursor: default; }
-  .cal-day.selected { background: var(--accent); color: var(--accent-text); font-weight: 700; }
+  .cal-day.selected { background: var(--accent); color: #fff; font-weight: 600; }
   .cal-day.empty { background: transparent; }
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .cal-nav button { background: none; border: 1px solid var(--border); color: var(--text); border-radius: 6px; width: 28px; height: 28px; }
@@ -363,21 +342,21 @@
     color: var(--text); font-size: 13px; text-align: center;
   }
   .slot-btn:hover { border-color: var(--accent); }
-  .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+  .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
   .duration-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .duration-btn {
     padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
     color: var(--text); font-size: 13px;
   }
-  .duration-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+  .duration-btn.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
   .reason-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .reason-chip {
     padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--panel-2);
     color: var(--text); font-size: 13px;
   }
-  .reason-chip.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+  .reason-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
   .booking-summary { background: var(--panel-2); border-radius: 8px; padding: 14px; margin-top: 16px; font-size: 13px; color: var(--text-dim); }
   .booking-summary strong { color: var(--text); }
@@ -424,60 +403,14 @@
   .skel { background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel) 50%, var(--panel-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
   @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
-  /* ---------- Notification bell ---------- */
-  .bell-btn {
-    position: relative; background: none; border: 1px solid transparent; color: var(--text-dim);
-    width: 36px; height: 36px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .bell-btn:hover { background: var(--panel-2); color: var(--text); }
-  .bell-dot {
-    position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--danger); border: 2px solid var(--bg);
-  }
-  .bell-panel {
-    position: absolute; top: calc(100% + 8px); right: 0; width: 320px; max-width: calc(100vw - 32px);
-    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); 
-    box-shadow: 0 12px 32px rgba(0,0,0,.4); z-index: 150; overflow: hidden;
-  }
-  .bell-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .bell-panel-header h3 { font-size: 13px; margin: 0; font-weight: 600; }
-  .bell-panel-header button { background: none; border: none; color: var(--text-faint); font-size: 12px; }
-  .bell-panel-header button:hover { color: var(--accent); }
-  .bell-list { max-height: 340px; overflow-y: auto; }
-  .bell-item { display: flex; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
-  .bell-item:last-child { border-bottom: none; }
-  .bell-item.unread { background: rgba(209,154,74,.06); }
-  .bell-item .b-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-  .bell-item .b-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .bell-item .b-msg { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
-  .bell-item .b-time { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
-  .bell-empty { padding: 28px 16px; text-align: center; color: var(--text-faint); font-size: 13px; }
-  .bell-overlay-catch { position: fixed; inset: 0; z-index: 140; }
-
   @media (max-width: 860px) {
     .sidebar { display: none; }
-    .topbar { display: flex; position: sticky; top: 0; z-index: 60; background: var(--bg); }
-    .main-content { padding: 18px 16px 96px; }
+    .topbar { display: flex; }
+    .main-content { padding: 20px; }
     .cards-row { grid-template-columns: repeat(2, 1fr); }
-    .cards-row .link-card { grid-column: 1 / -1; }
-
-    .bottom-nav {
-      display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
-      background: var(--panel); border-top: 1px solid var(--border);
-      padding: 6px 4px calc(6px + var(--safe-bottom));
-      justify-content: space-around;
+    .app-shell.mobile-drawer-open .sidebar {
+      display: flex; position: fixed; inset: 0 auto 0 0; z-index: 90; background: var(--bg); width: 240px;
     }
-    .bottom-nav .bn-link {
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      padding: 6px 4px; flex: 1; color: var(--text-faint); font-size: 10.5px; font-weight: 600;
-      border-radius: var(--radius-sm);
-    }
-    .bottom-nav .bn-link .bn-icon { font-size: 19px; line-height: 1; }
-    .bottom-nav .bn-link.active { color: var(--accent); }
-  }
-  @media (min-width: 861px) {
-    .bottom-nav { display: none; }
   }
 </style>
 </head>
@@ -485,7 +418,6 @@
 
 <div id="app"><div class="loading-screen">Loading…</div></div>
 <div id="toast-stack"></div>
-
 
 <script type="module">
 window.addEventListener("meetly:ready", initMeetly, { once: true });
@@ -809,15 +741,6 @@ async function route() {
 // ============================================================
 // SHELL: layout wrapper for logged-in app pages
 // ============================================================
-// icon glyphs per nav key — plain text/emoji, no icon library needed
-const NAV_ICONS = {
-  dashboard: "◆",
-  requests: "◧",
-  "my-requests": "◨",
-  availability: "◷",
-  profile: "◍"
-};
-
 function appShell(activePage, innerHtml) {
   const links = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard" },
@@ -845,21 +768,9 @@ function appShell(activePage, innerHtml) {
       <div class="main">
         <div class="topbar">
           <div class="logo">Meetly</div>
-          <div style="position:relative;">
-            <button class="bell-btn" id="bell-btn" aria-label="Notifications">
-              🔔<span class="bell-dot" id="bell-dot" style="display:none;"></span>
-            </button>
-          </div>
+          <button class="icon-btn" id="mobile-menu-btn" style="font-size:20px;color:var(--text);">☰</button>
         </div>
         <div class="main-content">${innerHtml}</div>
-      </div>
-      <div class="bottom-nav">
-        ${links.map(l => `
-          <a class="bn-link ${l.key===activePage?'active':''}" data-nav="${l.href}">
-            <span class="bn-icon">${NAV_ICONS[l.key] || "•"}</span>
-            <span>${l.label.split(" ")[0]}</span>
-          </a>
-        `).join("")}
       </div>
     </div>
   `;
@@ -870,113 +781,10 @@ function appShell(activePage, innerHtml) {
     await signOut(auth);
     navigate("/");
   });
-  setupNotificationBell();
-}
-
-// ============================================================
-// NOTIFICATION BELL
-// ============================================================
-async function setupNotificationBell() {
-  const bellBtn = document.getElementById("bell-btn");
-  const bellDot = document.getElementById("bell-dot");
-  if (!bellBtn) return;
-
-  let notifs = [];
-  try {
-    const snap = await getDocs(query(collection(db, "notifications"), where("userId", "==", currentUser.uid)));
-    notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => {
-        const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-        const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-        return bt - at;
-      })
-      .slice(0, 20);
-  } catch (err) {
-    console.error("Couldn't load notifications:", err);
-  }
-
-  const hasUnread = notifs.some(n => !n.read);
-  bellDot.style.display = hasUnread ? "block" : "none";
-
-  bellBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (document.getElementById("bell-panel")) { closeBellPanel(); return; }
-    openBellPanel(notifs);
+  const menuBtn = document.getElementById("mobile-menu-btn");
+  if (menuBtn) menuBtn.addEventListener("click", () => {
+    document.getElementById("app-shell").classList.toggle("mobile-drawer-open");
   });
-}
-
-const NOTIF_ICONS = {
-  new_request: "📩",
-  accepted: "✅",
-  declined: "✕",
-  suggestion: "🕓"
-};
-
-function openBellPanel(notifs) {
-  const wrap = document.getElementById("bell-btn").parentElement;
-  const panel = document.createElement("div");
-  panel.className = "bell-panel";
-  panel.id = "bell-panel";
-  panel.innerHTML = `
-    <div class="bell-panel-header">
-      <h3>Notifications</h3>
-      ${notifs.some(n=>!n.read) ? `<button id="mark-all-read">Mark all read</button>` : ""}
-    </div>
-    <div class="bell-list">
-      ${notifs.length === 0
-        ? `<div class="bell-empty">You're all caught up.</div>`
-        : notifs.map(n => `
-          <div class="bell-item ${n.read ? '' : 'unread'}" data-id="${n.id}">
-            <div class="b-icon">${NOTIF_ICONS[n.type] || "•"}</div>
-            <div style="flex:1;min-width:0;">
-              <div class="b-title">${esc(n.title || "")}</div>
-              <div class="b-msg">${esc(n.message || "")}</div>
-              <div class="b-time">${n.createdAt && n.createdAt.toDate ? n.createdAt.toDate().toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : ""}</div>
-            </div>
-          </div>
-        `).join("")
-      }
-    </div>
-  `;
-  wrap.appendChild(panel);
-
-  const catchOverlay = document.createElement("div");
-  catchOverlay.className = "bell-overlay-catch";
-  catchOverlay.id = "bell-overlay-catch";
-  catchOverlay.addEventListener("click", closeBellPanel);
-  document.body.insertBefore(catchOverlay, document.body.firstChild);
-
-  const markAllBtn = document.getElementById("mark-all-read");
-  if (markAllBtn) markAllBtn.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    try {
-      await Promise.all(notifs.filter(n => !n.read).map(n => updateDoc(doc(db, "notifications", n.id), { read: true })));
-      document.getElementById("bell-dot").style.display = "none";
-      closeBellPanel();
-    } catch (err) {
-      console.error(err);
-    }
-  });
-
-  panel.querySelectorAll(".bell-item").forEach(item => {
-    item.addEventListener("click", async () => {
-      const n = notifs.find(x => x.id === item.dataset.id);
-      if (n && !n.read) {
-        item.classList.remove("unread");
-        try { await updateDoc(doc(db, "notifications", n.id), { read: true }); } catch (err) { console.error(err); }
-        if (!notifs.some(x => x.id !== n.id && !x.read)) {
-          document.getElementById("bell-dot").style.display = "none";
-        }
-      }
-    });
-  });
-}
-
-function closeBellPanel() {
-  const panel = document.getElementById("bell-panel");
-  if (panel) panel.remove();
-  const overlay = document.getElementById("bell-overlay-catch");
-  if (overlay) overlay.remove();
 }
 
 // ============================================================
@@ -998,14 +806,16 @@ function renderLanding() {
         </div>
       </div>
       <div class="section" id="how-it-works">
+        <div class="section-label">How it works</div>
         <h2>Three steps, no calendar tennis</h2>
         <div class="steps">
-          <div class="step"><span class="step-num">1</span><h3>Create your profile</h3><p>Sign in and choose a username. That's your Meetly link.</p></div>
-          <div class="step"><span class="step-num">2</span><h3>Share your link</h3><p>Send it in a message, an email signature, or your bio.</p></div>
-          <div class="step"><span class="step-num">3</span><h3>Accept what works</h3><p>Review requests and confirm the times that fit your day.</p></div>
+          <div class="step"><h3>Create your profile</h3><p>Sign in and choose a username. That's your Meetly link.</p></div>
+          <div class="step"><h3>Share your link</h3><p>Send it in a message, an email signature, or your bio.</p></div>
+          <div class="step"><h3>Accept what works</h3><p>Review requests and confirm the times that fit your day.</p></div>
         </div>
       </div>
       <div class="section" style="border-bottom:none;">
+        <div class="section-label">Why it works</div>
         <h2>Built around real availability</h2>
         <div class="features">
           <div class="feature"><h3>Real conflict checking</h3><p>Every request is checked against your schedule and existing bookings before it's confirmed.</p></div>
