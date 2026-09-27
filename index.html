@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Meetly — Your time. Your link. Your choice.</title>
 <meta name="description" content="Meetly is the simplest way to share your availability and let people book time with you. Set your hours once, share your link, and skip the back-and-forth." />
-<meta name="theme-color" content="#050b14" />
+<meta name="theme-color" content="#0b0d10" />
 <meta property="og:title" content="Meetly — Your time. Your link. Your choice." />
 <meta property="og:description" content="Share your availability once. Let people request a time that actually works — no back-and-forth, no guesswork." />
 <meta property="og:type" content="website" />
@@ -46,7 +46,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    getAuth, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
     getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where,
@@ -61,7 +61,8 @@
 
   window.__meetly = {
     auth, db, googleProvider,
-    signInWithPopup, signOut, onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
     doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
     serverTimestamp, Timestamp
   };
@@ -78,20 +79,20 @@
 
 <style>
   :root {
-    --bg: #050b14;
-    --panel: #0a1526;
-    --panel-2: #0f1f36;
-    --border: #1c3352;
-    --border-soft: #142640;
-    --text: #eaf1fb;
-    --text-dim: #8fa6c4;
-    --text-faint: #57708f;
-    --accent: #2fb3c7;
-    --accent-hover: #4cc6d9;
-    --accent-dim: #164450;
-    --accent-text: #04141a;
-    --danger: #e2665c;
-    --success: #3ec48a;
+    --bg: #0b0d10;
+    --panel: #15181c;
+    --panel-2: #1c2025;
+    --border: #2a2e34;
+    --border-soft: #202429;
+    --text: #f2efe9;
+    --text-dim: #a6a49d;
+    --text-faint: #6b6a65;
+    --accent: #d99a54;
+    --accent-hover: #e5ac6d;
+    --accent-dim: #3a2c18;
+    --accent-text: #1a1206;
+    --danger: #d97066;
+    --success: #7fae83;
     --radius-sm: 5px;
     --radius: 10px;
     --radius-lg: 16px;
@@ -330,9 +331,9 @@
   .request-note { font-size: 13px; color: var(--text-dim); background: var(--panel-2); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
   .request-actions { display: flex; gap: 8px; }
   .status-pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em; }
-  .status-pill.pending { background: rgba(91,141,239,.15); color: var(--accent); }
-  .status-pill.accepted { background: rgba(76,175,130,.15); color: var(--success); }
-  .status-pill.declined { background: rgba(226,100,92,.15); color: var(--danger); }
+  .status-pill.pending { background: rgba(217,154,84,.15); color: var(--accent); }
+  .status-pill.accepted { background: rgba(127,174,131,.15); color: var(--success); }
+  .status-pill.declined { background: rgba(217,112,102,.15); color: var(--danger); }
 
   .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
   .tab { padding: 10px 14px; font-size: 14px; color: var(--text-dim); border-bottom: 2px solid transparent; }
@@ -406,11 +407,28 @@
 
   .slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
   .slot-btn {
-    padding: 10px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 9px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2);
     color: var(--text); font-size: 13px; text-align: center;
   }
+  .slot-btn .slot-time { font-weight: 600; }
+  .slot-btn .slot-sub { font-size: 10.5px; color: var(--text-faint); }
+  .slot-btn.selected .slot-sub { color: var(--accent-text); opacity: .75; }
   .slot-btn:hover { border-color: var(--accent); }
   .slot-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+
+  .tz-note {
+    display: flex; align-items: center; gap: 8px; background: var(--panel-2); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 10px 12px; margin-top: 12px; font-size: 12.5px; color: var(--text-dim);
+  }
+  .gcal-link { font-size: 12px; color: var(--accent); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+  .gcal-link:hover { color: var(--accent-hover); text-decoration: underline; }
+  .search-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-row input[type="text"] {
+    flex: 1; min-width: 180px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 12px; border-radius: 6px; font-size: 13.5px;
+  }
+  .search-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
 
   .duration-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .duration-btn {
@@ -457,7 +475,7 @@
   }
   .toast.success { border-left-color: var(--success); }
   .toast.error { border-left-color: var(--danger); }
-  .toast.warning { border-left-color: #d6a94f; }
+  .toast.warning { border-left-color: #c99a4a; }
   @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ---------- Misc ---------- */
@@ -472,13 +490,13 @@
   @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
   /* ---------- Notification bell ---------- */
-  .bell-btn {
+  .bell-btn, .icon-btn {
     position: relative; background: none; border: 1px solid transparent; color: var(--text-dim);
     width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 18px; transition: background .15s, transform .1s;
   }
-  .bell-btn:hover { background: var(--panel-2); color: var(--text); }
-  .bell-btn:active { transform: scale(.92); }
+  .bell-btn:hover, .icon-btn:hover { background: var(--panel-2); color: var(--text); }
+  .bell-btn:active, .icon-btn:active { transform: scale(.92); }
   .bell-btn.ringing { animation: bell-ring .5s ease; }
   @keyframes bell-ring {
     0%, 100% { transform: rotate(0); } 20% { transform: rotate(-14deg); } 40% { transform: rotate(11deg); }
@@ -488,13 +506,13 @@
     position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 20px;
     background: var(--danger); border: 2px solid var(--bg); color: #fff; font-size: 10px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; line-height: 1;
-    box-shadow: 0 0 0 rgba(226,102,92,.5); animation: dot-pulse 1.8s infinite;
+    box-shadow: 0 0 0 rgba(217,112,102,.5); animation: dot-pulse 1.8s infinite;
   }
-  @keyframes dot-pulse { 0% { box-shadow: 0 0 0 0 rgba(226,102,92,.45); } 70% { box-shadow: 0 0 0 6px rgba(226,102,92,0); } 100% { box-shadow: 0 0 0 0 rgba(226,102,92,0); } }
+  @keyframes dot-pulse { 0% { box-shadow: 0 0 0 0 rgba(217,112,102,.45); } 70% { box-shadow: 0 0 0 6px rgba(217,112,102,0); } 100% { box-shadow: 0 0 0 0 rgba(217,112,102,0); } }
   .bell-panel {
-    position: absolute; top: calc(100% + 10px); right: 0; width: 340px; max-width: calc(100vw - 24px);
+    position: fixed; width: 340px; max-width: calc(100vw - 24px);
     background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    box-shadow: 0 16px 40px rgba(0,0,0,.5); z-index: 150; overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0,0,0,.5); z-index: 9999; overflow: hidden;
     transform-origin: top right; animation: panel-in .16s ease-out;
   }
   @keyframes panel-in { from { opacity: 0; transform: scale(.96) translateY(-6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
@@ -507,25 +525,22 @@
   .bell-item { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--border-soft); position: relative; transition: background .12s; cursor: pointer; }
   .bell-item:last-child { border-bottom: none; }
   .bell-item:hover { background: var(--panel-2); }
-  .bell-item.unread { background: rgba(47,179,199,.07); }
+  .bell-item.unread { background: rgba(217,154,84,.08); }
   .bell-item.unread::before { content: ""; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .bell-item.unread { padding-left: 22px; }
   .bell-item .b-icon {
     font-size: 15px; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
     background: var(--panel-2); display: flex; align-items: center; justify-content: center;
   }
-  .bell-item.type-accepted .b-icon { background: rgba(62,196,138,.15); }
-  .bell-item.type-declined .b-icon { background: rgba(226,102,92,.15); }
-  .bell-item.type-new_request .b-icon { background: rgba(47,179,199,.15); }
+  .bell-item.type-accepted .b-icon { background: rgba(127,174,131,.18); }
+  .bell-item.type-declined .b-icon { background: rgba(217,112,102,.18); }
+  .bell-item.type-new_request .b-icon { background: rgba(217,154,84,.18); }
   .bell-item .b-title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
   .bell-item .b-msg { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
   .bell-item .b-time { font-size: 11px; color: var(--text-faint); margin-top: 5px; }
   .bell-empty { padding: 40px 16px; text-align: center; color: var(--text-faint); font-size: 13px; }
   .bell-empty .be-icon { font-size: 26px; display: block; margin-bottom: 8px; opacity: .6; }
-  .bell-overlay-catch { position: fixed; inset: 0; z-index: 140; }
-  @media (max-width: 480px) {
-    .bell-panel { position: fixed; top: calc(var(--safe-top) + 8px); right: 8px; left: 8px; width: auto; max-width: none; }
-  }
+  .bell-overlay-catch { position: fixed; inset: 0; z-index: 9998; }
 
   @media (max-width: 860px) {
     .sidebar { display: none; }
@@ -564,7 +579,7 @@ window.addEventListener("meetly:ready", initMeetly, { once: true });
 
 function initMeetly() {
 const {
-  auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged,
+  auth, db, googleProvider, GoogleAuthProvider, signInWithPopup, reauthenticateWithPopup, signOut, onAuthStateChanged,
   doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc,
   serverTimestamp, Timestamp
 } = window.__meetly;
@@ -621,6 +636,103 @@ function formatDateLabel(dk) {
   const [y,mo,da] = dk.split("-").map(Number);
   const d = new Date(y, mo-1, da);
   return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+}
+
+// ---- Timezone helpers ----------------------------------------------------
+// Slot generation itself always stays in the meeting owner's own local
+// wall-clock day/time (that's how availability is stored) — these helpers
+// are purely for *displaying* a converted, auto-detected time to whoever is
+// looking at the screen, without touching the underlying booking logic.
+function getViewerTimeZone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; }
+}
+function tzOffsetMinutes(date, timeZone) {
+  try {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+    const parts = {};
+    for (const p of dtf.formatToParts(date)) parts[p.type] = p.value;
+    const asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    return (asUTC - date.getTime()) / 60000;
+  } catch { return 0; }
+}
+// Converts a "date + HH:MM" that's meant as local wall-clock time *in timeZone*
+// into the correct UTC instant (two-pass, so DST transitions resolve correctly).
+function zonedDateTimeToUtc(dateStr, timeStr, timeZone) {
+  const [y, mo, da] = dateStr.split("-").map(Number);
+  const [h, mi] = timeStr.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, da, h, mi, 0);
+  const off1 = tzOffsetMinutes(new Date(guess), timeZone);
+  const off2 = tzOffsetMinutes(new Date(guess - off1 * 60000), timeZone);
+  return new Date(guess - off2 * 60000);
+}
+function tzAbbrev(timeZone, date = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "short" }).formatToParts(date);
+    const p = parts.find(x => x.type === "timeZoneName");
+    return p ? p.value : timeZone;
+  } catch { return timeZone; }
+}
+// Given a slot expressed in the owner's local time, returns how to show it to
+// `viewerTz`: the converted time, the original time as a secondary caption
+// (only when the zones actually differ), and a same/previous/next-day flag.
+function formatForViewer(dateStr, timeStr, ownerTz, viewerTz) {
+  const ownerLabel = formatTimeLabel(timeStr);
+  if (!ownerTz || !viewerTz || ownerTz === viewerTz) {
+    return { primary: ownerLabel, secondary: "", dayShift: "" };
+  }
+  const utcDate = zonedDateTimeToUtc(dateStr, timeStr, ownerTz);
+  const vp = {};
+  for (const p of new Intl.DateTimeFormat("en-US", {
+    timeZone: viewerTz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
+  }).formatToParts(utcDate)) vp[p.type] = p.value;
+  const viewerDateStr = `${vp.year}-${vp.month}-${vp.day}`;
+  const viewerTimeStr = `${vp.hour}:${vp.minute}`;
+  let dayShift = "";
+  if (viewerDateStr !== dateStr) dayShift = viewerDateStr < dateStr ? "(previous day)" : "(next day)";
+  return { primary: formatTimeLabel(viewerTimeStr), secondary: `${ownerLabel} ${tzAbbrev(ownerTz)}`, dayShift };
+}
+
+// ---- Google Calendar -------------------------------------------------------
+// Zero-setup "quick add" link — works for anyone, no sign-in scopes needed.
+function googleCalendarLink({ title, details, dateStr, startTime, endTime, timeZone }) {
+  const startUtc = zonedDateTimeToUtc(dateStr, startTime, timeZone || "UTC");
+  const endUtc = zonedDateTimeToUtc(dateStr, endTime, timeZone || "UTC");
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const params = new URLSearchParams({
+    action: "TEMPLATE", text: title || "Meetly meeting",
+    dates: `${fmt(startUtc)}/${fmt(endUtc)}`, details: details || ""
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+// Best-effort direct push into a connected Google Calendar via the Calendar
+// API. Requires the extra "calendar.events" OAuth scope (see connectGoogleCalendar
+// in the Profile page) — if that hasn't been granted, or the API call fails
+// for any reason (token expired, Calendar API not enabled on the Google Cloud
+// project, offline, etc.), this fails silently and callers fall back to the
+// googleCalendarLink() quick-add link instead. It never blocks the booking flow.
+async function pushToGoogleCalendar({ title, details, dateStr, startTime, endTime, timeZone }) {
+  const token = window.__meetlyCalendarToken;
+  if (!token) return { ok: false };
+  try {
+    const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({
+        summary: title || "Meetly meeting",
+        description: details || "",
+        start: { dateTime: zonedDateTimeToUtc(dateStr, startTime, timeZone || "UTC").toISOString() },
+        end: { dateTime: zonedDateTimeToUtc(dateStr, endTime, timeZone || "UTC").toISOString() }
+      })
+    });
+    if (!res.ok) return { ok: false, status: res.status };
+    return { ok: true };
+  } catch (err) {
+    console.error("Google Calendar push failed:", err);
+    return { ok: false, error: err };
+  }
 }
 
 // ============================================================
@@ -931,10 +1043,13 @@ function appShell(activePage, innerHtml) {
       <div class="main">
         <div class="topbar">
           <div class="logo">Meetly</div>
-          <div style="position:relative;">
-            <button class="bell-btn" id="bell-btn" aria-label="Notifications">
-              🔔<span class="bell-dot" id="bell-dot" style="display:none;"></span>
-            </button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="icon-btn" id="mobile-signout-btn" aria-label="Sign out" title="Sign out">⏻</button>
+            <div style="position:relative;">
+              <button class="bell-btn" id="bell-btn" aria-label="Notifications">
+                🔔<span class="bell-dot" id="bell-dot" style="display:none;"></span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="main-content">${innerHtml}</div>
@@ -953,6 +1068,10 @@ function appShell(activePage, innerHtml) {
     e.preventDefault(); navigate(a.dataset.nav);
   }));
   document.getElementById("signout-btn").addEventListener("click", async () => {
+    await signOut(auth);
+    navigate("/");
+  });
+  document.getElementById("mobile-signout-btn").addEventListener("click", async () => {
     await signOut(auth);
     navigate("/");
   });
@@ -1006,7 +1125,8 @@ const NOTIF_ICONS = {
 };
 
 function openBellPanel(notifs) {
-  const wrap = document.getElementById("bell-btn").parentElement;
+  const bellBtn = document.getElementById("bell-btn");
+  const btnRect = bellBtn.getBoundingClientRect();
   const unreadCount = notifs.filter(n => !n.read).length;
   const panel = document.createElement("div");
   panel.className = "bell-panel";
@@ -1032,13 +1152,23 @@ function openBellPanel(notifs) {
       }
     </div>
   `;
-  wrap.appendChild(panel);
+
+  const isNarrow = window.innerWidth <= 480;
+  if (isNarrow) {
+    panel.style.top = "calc(var(--safe-top) + 8px)";
+    panel.style.left = "8px";
+    panel.style.right = "8px";
+  } else {
+    panel.style.top = `${Math.round(btnRect.bottom + 10)}px`;
+    panel.style.right = `${Math.max(12, Math.round(window.innerWidth - btnRect.right))}px`;
+  }
 
   const catchOverlay = document.createElement("div");
   catchOverlay.className = "bell-overlay-catch";
   catchOverlay.id = "bell-overlay-catch";
   catchOverlay.addEventListener("click", closeBellPanel);
-  document.body.insertBefore(catchOverlay, document.body.firstChild);
+  document.body.appendChild(catchOverlay);
+  document.body.appendChild(panel);
 
   const markAllBtn = document.getElementById("mark-all-read");
   if (markAllBtn) markAllBtn.addEventListener("click", async (e) => {
@@ -1221,7 +1351,7 @@ function renderOnboarding() {
 // ============================================================
 // AGENDA — groups bookings by day into a Google Calendar-style list
 // ============================================================
-const EVENT_COLORS = ["#2fb3c7", "#5b8def", "#7c6fe0", "#3ec48a", "#e0a640"];
+const EVENT_COLORS = ["#d99a54", "#7c93c9", "#a389d4", "#7fae83", "#c9788a"];
 function renderAgenda(bookings) {
   const todayKey = dateKey(new Date());
   const groups = [];
@@ -1248,6 +1378,12 @@ function renderAgenda(bookings) {
                   <div class="ae-body">
                     <div class="ae-title">${esc(b.requesterName)}</div>
                     ${b.reason ? `<div class="ae-sub">${esc(b.reason)}</div>` : ""}
+                    <a class="gcal-link" style="margin-top:4px;" target="_blank" rel="noopener" href="${googleCalendarLink({
+                      title: `Meetly: meeting with ${b.requesterName || "a guest"}`,
+                      details: b.reason || "",
+                      dateStr: b.date, startTime: b.startTime, endTime: b.endTime,
+                      timeZone: currentProfile.timezone
+                    })}">+ Add to Google Calendar</a>
                   </div>
                 </div>
               `).join("")}
@@ -1350,6 +1486,7 @@ function greetingWord() {
 // REQUESTS PAGE
 // ============================================================
 let requestsTab = "pending";
+let requestsSearch = "";
 async function renderRequests() {
   appShell("requests", `
     <div class="page-header">
@@ -1359,6 +1496,9 @@ async function renderRequests() {
     <div class="tabs" id="req-tabs">
       ${["pending","accepted","declined","all"].map(t => `<div class="tab ${t===requestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
     </div>
+    <div class="search-row">
+      <input type="text" id="req-search" placeholder="Search by name, username, or reason…" value="${esc(requestsSearch)}">
+    </div>
     <div class="panel" id="req-list">${skeletonRows(3)}</div>
   `);
 
@@ -1366,6 +1506,12 @@ async function renderRequests() {
     requestsTab = t.dataset.tab;
     renderRequests();
   }));
+  const searchInput = document.getElementById("req-search");
+  let allRequestItems = [];
+  searchInput.addEventListener("input", () => {
+    requestsSearch = searchInput.value;
+    renderRequestsList(allRequestItems);
+  });
 
   try {
     let q;
@@ -1375,11 +1521,21 @@ async function renderRequests() {
       q = query(collection(db, "bookingRequests"), where("ownerId", "==", currentUser.uid), where("status", "==", requestsTab));
     }
     const snap = await getDocs(q);
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+    allRequestItems = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+    renderRequestsList(allRequestItems);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("req-list").innerHTML = `<div class="empty-state">Couldn't load requests.</div>`;
+  }
 
+  function renderRequestsList(all) {
+    const needle = requestsSearch.trim().toLowerCase();
+    const items = needle
+      ? all.filter(r => `${r.requesterName || ""} ${r.requesterUsername || ""} ${r.reason || ""} ${r.note || ""}`.toLowerCase().includes(needle))
+      : all;
     const listEl = document.getElementById("req-list");
     if (items.length === 0) {
-      listEl.innerHTML = `<div class="empty-state"><strong>No ${requestsTab === 'all' ? '' : requestsTab} requests</strong>New meeting requests will appear here.</div>`;
+      listEl.innerHTML = `<div class="empty-state"><strong>${needle ? "No matching requests" : `No ${requestsTab === 'all' ? '' : requestsTab} requests`}</strong>${needle ? "Try a different search." : "New meeting requests will appear here."}</div>`;
       return;
     }
     listEl.innerHTML = items.map(r => `
@@ -1391,9 +1547,19 @@ async function renderRequests() {
         </div>
         <div class="request-meta">${esc(formatDateLabel(r.date))} · ${esc(formatTimeLabel(r.startTime))}–${esc(formatTimeLabel(r.endTime))} · ${esc(r.duration)} min · ${esc(r.reason || "—")}</div>
         ${r.note ? `<div class="request-note">${esc(r.note)}</div>` : ""}
+        ${r.rescheduledFrom ? `<div class="request-note" style="border-left:2px solid var(--accent);">You proposed this new time. It was originally ${esc(formatDateLabel(r.rescheduledFrom.date))} at ${esc(formatTimeLabel(r.rescheduledFrom.startTime))}.</div>` : ""}
+        ${r.status === "accepted" ? `<div class="request-note" style="border-left:2px solid var(--success);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span>Confirmed.</span>
+            <a class="gcal-link" target="_blank" rel="noopener" href="${googleCalendarLink({
+              title: `Meetly: meeting with ${r.requesterName || "a guest"}`,
+              details: r.reason || "",
+              dateStr: r.date, startTime: r.startTime, endTime: r.endTime, timeZone: currentProfile.timezone
+            })}">+ Add to Google Calendar</a>
+          </div>` : ""}
         ${r.status === "pending" ? `
           <div class="request-actions">
             <button class="btn btn-primary btn-sm" data-action="accept" data-id="${r.id}">Accept</button>
+            <button class="btn btn-ghost btn-sm" data-action="reschedule" data-id="${r.id}">Reschedule</button>
             <button class="btn btn-danger btn-sm" data-action="decline" data-id="${r.id}">Decline</button>
           </div>
         ` : ""}
@@ -1402,9 +1568,7 @@ async function renderRequests() {
 
     listEl.querySelectorAll('[data-action="accept"]').forEach(b => b.addEventListener("click", () => acceptRequest(b, items.find(i=>i.id===b.dataset.id))));
     listEl.querySelectorAll('[data-action="decline"]').forEach(b => b.addEventListener("click", () => openDeclineModal(items.find(i=>i.id===b.dataset.id))));
-  } catch (err) {
-    console.error(err);
-    document.getElementById("req-list").innerHTML = `<div class="empty-state">Couldn't load requests.</div>`;
+    listEl.querySelectorAll('[data-action="reschedule"]').forEach(b => b.addEventListener("click", () => openRescheduleModal(items.find(i=>i.id===b.dataset.id))));
   }
 }
 
@@ -1448,6 +1612,19 @@ async function acceptRequest(btn, req) {
       createdAt: serverTimestamp()
     });
 
+    // Best-effort: if this owner has connected Google Calendar, push the
+    // confirmed meeting straight in. Silently does nothing if not connected,
+    // or if the push fails for any reason — the "Add to Google Calendar"
+    // link shown on the request card always works as a fallback either way.
+    if (currentProfile.googleCalendarConnected) {
+      pushToGoogleCalendar({
+        title: `Meetly: meeting with ${req.requesterName || "a guest"}`,
+        details: req.reason || "",
+        dateStr: req.date, startTime: req.startTime, endTime: req.endTime,
+        timeZone: currentProfile.timezone
+      });
+    }
+
     const emailResult = await sendAcceptedEmail({
       requesterEmail: req.requesterEmail,
       requesterName: req.requesterName,
@@ -1478,6 +1655,7 @@ async function acceptRequest(btn, req) {
 // MY REQUESTS PAGE — requests this user has sent to others
 // ============================================================
 let myRequestsTab = "all";
+let myRequestsSearch = "";
 async function renderMyRequests() {
   appShell("my-requests", `
     <div class="page-header">
@@ -1487,6 +1665,9 @@ async function renderMyRequests() {
     <div class="tabs" id="my-req-tabs">
       ${["all","pending","accepted","declined"].map(t => `<div class="tab ${t===myRequestsTab?'active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</div>`).join("")}
     </div>
+    <div class="search-row">
+      <input type="text" id="my-req-search" placeholder="Search by person or reason…" value="${esc(myRequestsSearch)}">
+    </div>
     <div class="panel" id="my-req-list">${skeletonRows(3)}</div>
   `);
 
@@ -1494,7 +1675,13 @@ async function renderMyRequests() {
     myRequestsTab = t.dataset.tab;
     renderMyRequests();
   }));
+  const searchInput = document.getElementById("my-req-search");
+  searchInput.addEventListener("input", () => {
+    myRequestsSearch = searchInput.value;
+    renderMyRequestsList(allMyRequestItems);
+  });
 
+  let allMyRequestItems = [];
   try {
     let q;
     if (myRequestsTab === "all") {
@@ -1503,28 +1690,49 @@ async function renderMyRequests() {
       q = query(collection(db, "bookingRequests"), where("requesterId", "==", currentUser.uid), where("status", "==", myRequestsTab));
     }
     const snap = await getDocs(q);
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+    allMyRequestItems = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+    renderMyRequestsList(allMyRequestItems);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("my-req-list").innerHTML = `<div class="empty-state">Couldn't load your requests.</div>`;
+  }
 
+  function renderMyRequestsList(all) {
+    const needle = myRequestsSearch.trim().toLowerCase();
+    const items = needle
+      ? all.filter(r => `${r.ownerUsername || ""} ${r.reason || ""} ${r.note || ""}`.toLowerCase().includes(needle))
+      : all;
     const listEl = document.getElementById("my-req-list");
     if (items.length === 0) {
-      listEl.innerHTML = `<div class="empty-state"><strong>No ${myRequestsTab === 'all' ? '' : myRequestsTab} requests</strong>Meetings you request will appear here.</div>`;
+      listEl.innerHTML = `<div class="empty-state"><strong>${needle ? "No matching requests" : `No ${myRequestsTab === 'all' ? '' : myRequestsTab} requests`}</strong>${needle ? "Try a different search." : "Meetings you request will appear here."}</div>`;
       return;
     }
-    listEl.innerHTML = items.map(r => `
+    const viewerTz = getViewerTimeZone();
+    listEl.innerHTML = items.map(r => {
+      const startInfo = formatForViewer(r.date, r.startTime, r.ownerTimezone, viewerTz);
+      const endInfo = formatForViewer(r.date, r.endTime, r.ownerTimezone, viewerTz);
+      return `
       <div class="request-card">
         <div class="request-top">
           <span class="r-name">@${esc(r.ownerUsername || "")}</span>
           <span class="status-pill ${r.status}">${esc(r.status)}</span>
         </div>
-        <div class="request-meta">${esc(formatDateLabel(r.date))} · ${esc(formatTimeLabel(r.startTime))}–${esc(formatTimeLabel(r.endTime))} · ${esc(r.duration)} min · ${esc(r.reason || "—")}</div>
+        <div class="request-meta">${esc(formatDateLabel(r.date))}${startInfo.dayShift ? ` <span style="color:var(--text-faint);">${esc(startInfo.dayShift)}</span>` : ""} · ${esc(startInfo.primary)}–${esc(endInfo.primary)} · ${esc(r.duration)} min · ${esc(r.reason || "—")}</div>
+        ${startInfo.secondary ? `<div class="request-note" style="font-size:12px;">🌐 ${esc(startInfo.secondary)}–${esc(formatTimeLabel(r.endTime))} for ${esc(r.ownerUsername || "them")}</div>` : ""}
         ${r.note ? `<div class="request-note">${esc(r.note)}</div>` : ""}
+        ${r.rescheduledFrom ? `<div class="request-note" style="border-left:2px solid var(--accent);">The owner suggested this new time. It was originally ${esc(formatDateLabel(r.rescheduledFrom.date))} at ${esc(formatTimeLabel(r.rescheduledFrom.startTime))}.</div>` : ""}
         ${r.status === "declined" && r.ownerResponse ? `<div class="request-note" style="border-left:2px solid var(--danger);">Reason: ${esc(r.ownerResponse)}</div>` : ""}
-        ${r.status === "accepted" ? `<div class="request-note" style="border-left:2px solid var(--success);">Your meeting is confirmed.</div>` : ""}
+        ${r.status === "accepted" ? `<div class="request-note" style="border-left:2px solid var(--success);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span>Your meeting is confirmed.</span>
+            <a class="gcal-link" target="_blank" rel="noopener" href="${googleCalendarLink({
+              title: `Meetly: meeting with @${r.ownerUsername || ""}`,
+              details: r.reason || "",
+              dateStr: r.date, startTime: r.startTime, endTime: r.endTime, timeZone: r.ownerTimezone
+            })}">+ Add to Google Calendar</a>
+          </div>` : ""}
       </div>
-    `).join("");
-  } catch (err) {
-    console.error(err);
-    document.getElementById("my-req-list").innerHTML = `<div class="empty-state">Couldn't load your requests.</div>`;
+    `;
+    }).join("");
   }
 }
 
@@ -1591,8 +1799,91 @@ function openDeclineModal(req) {
 }
 
 // ============================================================
-// AVAILABILITY PAGE
+// RESCHEDULE MODAL — owner proposes a new date/time for a pending request
 // ============================================================
+function openRescheduleModal(req) {
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  const today = dateKey(new Date());
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Propose a new time</h3>
+      <p>Pick a date and time that works for you. ${esc(req.requesterName)} will be notified — you can still Accept or Decline once they've seen it.</p>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="resched-date" min="${today}" value="${esc(req.date)}">
+      </div>
+      <div id="resched-slots"><div class="field-hint">Loading available times…</div></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-sm" id="resched-cancel">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="resched-confirm" disabled>Propose this time</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  let chosenDate = req.date, chosenTime = null;
+  const slotsEl = overlay.querySelector("#resched-slots");
+  const confirmBtn = overlay.querySelector("#resched-confirm");
+
+  async function loadSlotsFor(dk) {
+    slotsEl.innerHTML = `<div class="field-hint">Loading available times…</div>`;
+    confirmBtn.disabled = true;
+    chosenTime = null;
+    const weekday = new Date(dk + "T00:00:00").getDay();
+    const ranges = await getAvailableRangesForDate(currentUser.uid, dk, weekday);
+    const slots = slotsFromRanges(ranges, req.duration);
+    if (slots.length === 0) {
+      slotsEl.innerHTML = `<div class="field-hint">No open times on this date.</div>`;
+      return;
+    }
+    slotsEl.innerHTML = `<div class="slot-grid">${slots.map(t => `<div class="slot-btn" data-time="${t}"><span class="slot-time">${esc(formatTimeLabel(t))}</span></div>`).join("")}</div>`;
+    slotsEl.querySelectorAll(".slot-btn").forEach(el => el.addEventListener("click", () => {
+      slotsEl.querySelectorAll(".slot-btn").forEach(b => b.classList.remove("selected"));
+      el.classList.add("selected");
+      chosenTime = el.dataset.time;
+      confirmBtn.disabled = false;
+    }));
+  }
+
+  overlay.querySelector("#resched-date").addEventListener("change", (e) => {
+    chosenDate = e.target.value;
+    if (chosenDate) loadSlotsFor(chosenDate);
+  });
+  loadSlotsFor(chosenDate);
+
+  overlay.querySelector("#resched-cancel").addEventListener("click", () => overlay.remove());
+  confirmBtn.addEventListener("click", async () => {
+    if (!chosenDate || !chosenTime) return;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<span class="spinner dark"></span>`;
+    try {
+      const newEndTime = minutesToTime(timeToMinutes(chosenTime) + req.duration);
+      const previous = { date: req.date, startTime: req.startTime, endTime: req.endTime };
+      await updateDoc(doc(db, "bookingRequests", req.id), {
+        date: chosenDate, startTime: chosenTime, endTime: newEndTime,
+        rescheduledFrom: previous, updatedAt: serverTimestamp()
+      });
+      await addDoc(collection(db, "notifications"), {
+        userId: req.requesterId,
+        type: "suggestion",
+        title: "New time suggested",
+        message: `${currentProfile.displayName} suggested a new time: ${formatDateLabel(chosenDate)} at ${formatTimeLabel(chosenTime)}.`,
+        read: false,
+        relatedRequestId: req.id,
+        createdAt: serverTimestamp()
+      });
+      overlay.remove();
+      toast("New time proposed. They'll be notified.", "success");
+      renderRequests();
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't propose a new time.", "error");
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Propose this time";
+    }
+  });
+}
 async function renderAvailabilityPage() {
   appShell("availability", `
     <div class="page-header">
@@ -1774,11 +2065,53 @@ async function renderProfilePage() {
       </div>
       <div class="field">
         <label>Timezone</label>
-        <input id="pf-tz" type="text" value="${esc(currentProfile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)}">
+        <div style="display:flex;gap:8px;">
+          <input id="pf-tz" type="text" value="${esc(currentProfile.timezone || getViewerTimeZone())}" style="flex:1;">
+          <button type="button" class="btn btn-ghost btn-sm" id="pf-tz-detect" title="Fill in this browser's detected timezone">Auto-detect</button>
+        </div>
+        <div class="field-hint">Bookers in a different timezone automatically see your times converted to theirs.</div>
       </div>
       <button class="btn btn-primary" id="pf-save">Save changes</button>
     </div>
+    <div class="panel" style="max-width:480px;">
+      <h2 style="margin-bottom:6px;">Google Calendar</h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:0 0 16px;">Connect your calendar so confirmed meetings are added for you automatically. (Everyone can also add individual meetings with the "Add to Google Calendar" link — no connection needed for that.)</p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="btn ${currentProfile.googleCalendarConnected ? 'btn-ghost' : 'btn-primary'} btn-sm" id="gcal-connect-btn">
+          ${currentProfile.googleCalendarConnected ? "Reconnect Google Calendar" : "Connect Google Calendar"}
+        </button>
+        ${currentProfile.googleCalendarConnected ? `<span style="font-size:12.5px;color:var(--success);">✓ Connected</span>` : ""}
+      </div>
+    </div>
   `);
+
+  document.getElementById("pf-tz-detect").addEventListener("click", () => {
+    document.getElementById("pf-tz").value = getViewerTimeZone();
+  });
+
+  document.getElementById("gcal-connect-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner dark"></span> Connecting…`;
+    try {
+      const calProvider = new GoogleAuthProvider();
+      calProvider.addScope("https://www.googleapis.com/auth/calendar.events");
+      const result = await reauthenticateWithPopup(auth.currentUser, calProvider);
+      const cred = GoogleAuthProvider.credentialFromResult(result);
+      if (cred && cred.accessToken) {
+        window.__meetlyCalendarToken = cred.accessToken;
+        await updateDoc(doc(db, "users", currentUser.uid), { googleCalendarConnected: true, updatedAt: serverTimestamp() });
+        currentProfile = { ...currentProfile, googleCalendarConnected: true };
+        toast("Google Calendar connected.", "success");
+      } else {
+        toast("Couldn't get calendar access from Google.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't connect Google Calendar.", "error");
+    }
+    renderProfilePage();
+  });
 
   document.getElementById("pf-save").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
@@ -1972,12 +2305,23 @@ async function renderStepTime(state, content) {
   const ranges = await getAvailableRangesForDate(state.owner.uid, state.selectedDate, weekday);
   const slots = slotsFromRanges(ranges, state.duration || 30);
 
+  const ownerTz = state.owner.timezone || getViewerTimeZone();
+  const viewerTz = getViewerTimeZone();
+  const showTzNote = ownerTz !== viewerTz;
+
   content.innerHTML = `
     <div class="panel">
       <h2>Choose a time — ${esc(formatDateLabel(state.selectedDate))}</h2>
+      ${showTzNote ? `<div class="tz-note">🌐 Times below are shown in your timezone (${esc(tzAbbrev(viewerTz))}). ${esc(state.owner.displayName)} is in ${esc(tzAbbrev(ownerTz))}.</div>` : ""}
       ${slots.length === 0
         ? `<div class="empty-state"><strong>No available times</strong>Try a different date.</div>`
-        : `<div class="slot-grid">${slots.map(t => `<div class="slot-btn ${state.selectedTime===t?'selected':''}" data-time="${t}">${esc(formatTimeLabel(t))}</div>`).join("")}</div>`
+        : `<div class="slot-grid">${slots.map(t => {
+            const info = formatForViewer(state.selectedDate, t, ownerTz, viewerTz);
+            return `<div class="slot-btn ${state.selectedTime===t?'selected':''}" data-time="${t}">
+              <span class="slot-time">${esc(info.primary)}</span>
+              ${info.secondary ? `<span class="slot-sub">${esc(info.secondary)}${info.dayShift ? " · " + esc(info.dayShift) : ""}</span>` : ""}
+            </div>`;
+          }).join("")}</div>`
       }
     </div>
     <div class="step-actions">
@@ -2058,12 +2402,15 @@ function renderStepReason(state, content) {
 
 function renderStepReview(state, content) {
   const finalReason = state.reason === "Other" ? (state.customReason || "Other") : state.reason;
+  const ownerTz = state.owner.timezone || getViewerTimeZone();
+  const viewerTz = getViewerTimeZone();
+  const info = formatForViewer(state.selectedDate, state.selectedTime, ownerTz, viewerTz);
   content.innerHTML = `
     <div class="panel">
       <h2>Review and confirm</h2>
       <div class="booking-summary">
         <div><strong>${esc(formatDateLabel(state.selectedDate))}</strong></div>
-        <div>${esc(formatTimeLabel(state.selectedTime))} · ${esc(state.duration)} minutes</div>
+        <div>${esc(info.primary)} · ${esc(state.duration)} minutes${info.secondary ? ` <span style="color:var(--text-faint);">(${esc(info.secondary)}${info.dayShift ? ", " + esc(info.dayShift) : ""})</span>` : ""}</div>
         <div>${esc(finalReason)}</div>
         ${state.note ? `<div style="margin-top:8px;">"${esc(state.note)}"</div>` : ""}
       </div>
@@ -2113,6 +2460,7 @@ function renderStepReview(state, content) {
         requesterUsername,
         requesterEmail: currentUser.email,
         ownerUsername: state.owner.username,
+        ownerTimezone: state.owner.timezone || null,
         date: state.selectedDate,
         startTime: state.selectedTime,
         endTime,
